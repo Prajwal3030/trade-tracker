@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import NavBar from "@/components/NavBar";
 import Dashboard from "@/components/Dashboard";
 import TradeFilters from "@/components/TradeFilters";
 import { getTrades, calculateMetrics } from "@/lib/trades";
 import { Trade, TradeFilters as TradeFiltersType } from "@/types/trade";
+import PnLChart from "@/components/charts/PnLChart";
+import WinLossChart from "@/components/charts/WinLossChart";
+import HourlyChart from "@/components/charts/HourlyChart";
+import DailyChart from "@/components/charts/DailyChart";
+import RRChart from "@/components/charts/RRChart";
 
 interface TimeBucketStat {
   key: string;
@@ -245,211 +249,252 @@ export default function AnalyticsPage() {
   const perf = useMemo(() => summarizePerformance(trades), [trades]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <header className="mb-4">
-          <h1 className="text-4xl font-bold text-gray-900 mb-1">
-            Analytics & Insights
-          </h1>
-          <p className="text-gray-600">
-            Discover your best hours, best days, and how your behavior impacts
-            results.
-          </p>
-        </header>
-
-        <NavBar />
+    <div className="min-h-screen bg-[#111827]">
+      <div className="container mx-auto px-6 py-6 max-w-7xl">
 
         <TradeFilters filters={filters} onFilterChange={setFilters} />
 
         <Dashboard metrics={metrics} />
 
-        {!isLoading && trades.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Current Streak
-              </div>
-              <div className="text-lg font-semibold text-slate-900">
-                {streaks.currentWinStreak > 0 && (
-                  <span className="text-emerald-600">
-                    {streaks.currentWinStreak} win
-                    {streaks.currentWinStreak > 1 ? "s" : ""} in a row
-                  </span>
-                )}
-                {streaks.currentLossStreak > 0 && (
-                  <span className="text-rose-600">
-                    {streaks.currentLossStreak} loss
-                    {streaks.currentLossStreak > 1 ? "es" : ""} in a row
-                  </span>
-                )}
-                {streaks.currentWinStreak === 0 &&
-                  streaks.currentLossStreak === 0 && (
-                    <span className="text-slate-500">No active streak</span>
-                  )}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Best Win Streak
-              </div>
-              <div className="text-lg font-semibold text-emerald-600">
-                {streaks.bestWinStreak} trade
-                {streaks.bestWinStreak === 1 ? "" : "s"}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Worst Loss Streak
-              </div>
-              <div className="text-lg font-semibold text-rose-600">
-                {streaks.worstLossStreak} trade
-                {streaks.worstLossStreak === 1 ? "" : "s"}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!isLoading && trades.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Avg Risk % per Trade
-              </div>
-              <div className="text-lg font-semibold text-slate-900">
-                {risk.avgRiskPercent}%
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Avg Position Size % of Account
-              </div>
-              <div className="text-lg font-semibold text-slate-900">
-                {risk.avgPositionPercent}%
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Avg Max Drawdown (₹)
-              </div>
-              <div className="text-lg font-semibold text-rose-600">
-                ₹{risk.avgMaxDrawdown}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Worst Max Drawdown (₹)
-              </div>
-              <div className="text-lg font-semibold text-rose-700">
-                ₹{risk.worstMaxDrawdown}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {!isLoading && trades.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Avg Max Favorable Excursion (₹)
-              </div>
-              <div className="text-lg font-semibold text-emerald-600">
-                ₹{perf.avgMFE}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Avg Max Adverse Excursion (₹)
-              </div>
-              <div className="text-lg font-semibold text-rose-600">
-                ₹{perf.avgMAE}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Avg Peak Profit (₹)
-              </div>
-              <div className="text-lg font-semibold text-slate-900">
-                ₹{perf.avgPeakProfit}
-              </div>
-            </div>
-            <div className="bg-white rounded-lg shadow-md p-4">
-              <div className="text-xs font-medium text-slate-500 mb-1">
-                Avg Time to Peak (minutes)
-              </div>
-              <div className="text-lg font-semibold text-slate-900">
-                {perf.avgTimeToPeak}
-              </div>
-            </div>
-          </div>
-        )}
-
         {isLoading && (
-          <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
-            Loading trades...
+          <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-xl p-12 text-center border border-gray-700/50 backdrop-blur-sm">
+            <div className="text-6xl mb-4 animate-pulse">📊</div>
+            <p className="text-gray-400 text-lg">Loading trades...</p>
           </div>
         )}
 
         {!isLoading && trades.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">
-                Best & Worst Hours
-              </h3>
-              <p className="text-sm text-gray-500 mb-3">
-                Based on average realized P&amp;L for each entry hour.
-              </p>
-              <div className="space-y-2">
-                {byHour.map((bucket) => (
-                  <div
-                    key={bucket.key}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-gray-700">
-                      {bucket.key} ({bucket.trades} trades)
-                    </span>
-                    <span
-                      className={
-                        bucket.avgPnL >= 0
-                          ? "text-green-600 font-medium"
-                          : "text-red-600 font-medium"
-                      }
-                    >
-                      ₹{bucket.avgPnL}
-                    </span>
+          <>
+            {/* Charts Section - Main Visualizations */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1 h-8 bg-gradient-to-b from-cyan-500 to-blue-600 rounded-full" />
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-100 to-cyan-200 bg-clip-text text-transparent">
+                  Visual Analytics
+                </h2>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* P&L Over Time Chart */}
+                <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-1 h-5 bg-gradient-to-b from-cyan-500 to-blue-600 rounded-full" />
+                    <h3 className="text-lg font-bold text-gray-100">
+                      P&L Over Time
+                    </h3>
                   </div>
-                ))}
+                  <p className="text-xs text-gray-400 mb-4">
+                    Track profit and loss progression
+                  </p>
+                  <PnLChart trades={trades} />
+                </div>
+
+                {/* Win/Loss Distribution */}
+                <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-1 h-5 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full" />
+                    <h3 className="text-lg font-bold text-gray-100">
+                      Win/Loss Breakdown
+                    </h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-4">
+                    Distribution of winning vs losing trades
+                  </p>
+                  <WinLossChart trades={trades} />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Hourly Performance */}
+                <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-1 h-5 bg-gradient-to-b from-cyan-500 to-blue-600 rounded-full" />
+                    <h3 className="text-lg font-bold text-gray-100">
+                      Performance by Hour
+                    </h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-4">
+                    Most profitable trading hours
+                  </p>
+                  <HourlyChart trades={trades} />
+                </div>
+
+                {/* Daily Performance */}
+                <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-1 h-5 bg-gradient-to-b from-green-500 to-emerald-600 rounded-full" />
+                    <h3 className="text-lg font-bold text-gray-100">
+                      Performance by Day
+                    </h3>
+                  </div>
+                  <p className="text-xs text-gray-400 mb-4">
+                    Best trading days of the week
+                  </p>
+                  <DailyChart trades={trades} />
+                </div>
+              </div>
+
+              {/* R:R Distribution Chart */}
+              <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-2xl p-6 border border-gray-700/50 backdrop-blur-sm">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-1 h-5 bg-gradient-to-b from-amber-500 to-orange-600 rounded-full" />
+                  <h3 className="text-lg font-bold text-gray-100">
+                    Risk:Reward Distribution
+                  </h3>
+                </div>
+                <p className="text-xs text-gray-400 mb-4">
+                  Distribution of realized R:R ratios
+                </p>
+                <RRChart trades={trades} />
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold mb-4 text-gray-800">
-                Best & Worst Days of Week
-              </h3>
-              <p className="text-sm text-gray-500 mb-3">
-                Based on average realized P&amp;L for each trading day.
-              </p>
-              <div className="space-y-2">
-                {byDay.map((bucket) => (
-                  <div
-                    key={bucket.key}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-gray-700">
-                      {bucket.key} ({bucket.trades} trades)
-                    </span>
-                    <span
-                      className={
-                        bucket.avgPnL >= 0
-                          ? "text-green-600 font-medium"
-                          : "text-red-600 font-medium"
-                      }
-                    >
-                      ₹{bucket.avgPnL}
-                    </span>
+            {/* Summary Cards Section */}
+            <div className="mb-12">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-1 h-8 bg-gradient-to-b from-purple-500 to-pink-600 rounded-full" />
+                <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-100 to-purple-200 bg-clip-text text-transparent">
+                  Performance Summary
+                </h2>
+              </div>
+
+              {/* Streaks */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-300 mb-3">Streaks</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-gray-700/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">🔥</span>
+                      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Current Streak
+                      </div>
+                    </div>
+                    <div className="text-xl font-bold">
+                      {streaks.currentWinStreak > 0 && (
+                        <span className="text-green-400">
+                          {streaks.currentWinStreak} win{streaks.currentWinStreak > 1 ? "s" : ""}
+                        </span>
+                      )}
+                      {streaks.currentLossStreak > 0 && (
+                        <span className="text-red-400">
+                          {streaks.currentLossStreak} loss{streaks.currentLossStreak > 1 ? "es" : ""}
+                        </span>
+                      )}
+                      {streaks.currentWinStreak === 0 && streaks.currentLossStreak === 0 && (
+                        <span className="text-gray-400">None</span>
+                      )}
+                    </div>
                   </div>
-                ))}
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-green-500/20 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">⭐</span>
+                      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Best Win Streak
+                      </div>
+                    </div>
+                    <div className="text-xl font-bold text-green-400">
+                      {streaks.bestWinStreak} trade{streaks.bestWinStreak === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-red-500/20 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">⚠️</span>
+                      <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                        Worst Loss Streak
+                      </div>
+                    </div>
+                    <div className="text-xl font-bold text-red-400">
+                      {streaks.worstLossStreak} trade{streaks.worstLossStreak === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Risk Management */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-300 mb-3">Risk Management</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-gray-700/50 backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                      Avg Risk %
+                    </div>
+                    <div className="text-2xl font-bold text-cyan-400">
+                      {risk.avgRiskPercent}%
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-gray-700/50 backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                      Avg Position %
+                    </div>
+                    <div className="text-2xl font-bold text-cyan-400">
+                      {risk.avgPositionPercent}%
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-red-500/20 backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                      Avg Max Drawdown
+                    </div>
+                    <div className="text-2xl font-bold text-red-400">
+                      ₹{risk.avgMaxDrawdown}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-red-500/20 backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                      Worst Drawdown
+                    </div>
+                    <div className="text-2xl font-bold text-red-400">
+                      ₹{risk.worstMaxDrawdown}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Tracking */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-300 mb-3">Trade Performance</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-green-500/20 backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                      Avg MFE (₹)
+                    </div>
+                    <div className="text-2xl font-bold text-green-400">
+                      ₹{perf.avgMFE}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-red-500/20 backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                      Avg MAE (₹)
+                    </div>
+                    <div className="text-2xl font-bold text-red-400">
+                      ₹{perf.avgMAE}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-green-500/20 backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                      Avg Peak Profit
+                    </div>
+                    <div className="text-2xl font-bold text-green-400">
+                      ₹{perf.avgPeakProfit}
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-gray-700/50 backdrop-blur-sm">
+                    <div className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wider">
+                      Avg Time to Peak
+                    </div>
+                    <div className="text-2xl font-bold text-cyan-400">
+                      {perf.avgTimeToPeak}m
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
+          </>
+        )}
+
+        {!isLoading && trades.length === 0 && (
+          <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-xl p-12 text-center border border-gray-700/50 backdrop-blur-sm">
+            <div className="text-6xl mb-4">📊</div>
+            <p className="text-gray-400 text-lg">No trades found. Start logging trades to see analytics!</p>
           </div>
         )}
       </div>

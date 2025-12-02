@@ -300,15 +300,17 @@ export default function TradeForm({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">
-        {mode === "edit" ? "Edit Trade" : "Log New Trade"}
-      </h2>
+    <div className="bg-[#1f2937] rounded-lg shadow-lg p-6 border border-gray-700/50">
+      <div className="flex items-center gap-3 mb-6">
+        <h2 className="text-xl font-semibold text-gray-100">
+          {mode === "edit" ? "Edit Trade" : "Log New Trade"}
+        </h2>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Trade Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Asset/Instrument *
             </label>
             <input
@@ -317,13 +319,13 @@ export default function TradeForm({
               value={formData.asset}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               placeholder="e.g., NIFTY, EURUSD"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Strategy ID *
             </label>
             <select
@@ -331,7 +333,7 @@ export default function TradeForm({
               value={formData.strategyId}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
               <option value="Setup 1">Setup 1</option>
               <option value="Setup 2">Setup 2</option>
@@ -339,7 +341,7 @@ export default function TradeForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Direction *
             </label>
             <select
@@ -347,7 +349,7 @@ export default function TradeForm({
               value={formData.direction}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
               <option value="Long">Long</option>
               <option value="Short">Short</option>
@@ -355,7 +357,7 @@ export default function TradeForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Entry Time *
             </label>
             <input
@@ -368,12 +370,12 @@ export default function TradeForm({
               }
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Exit Time *
             </label>
             <input
@@ -386,12 +388,12 @@ export default function TradeForm({
               }
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Exit Reason *
             </label>
             <select
@@ -399,7 +401,7 @@ export default function TradeForm({
               value={formData.exitReason}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
             >
               <option value="SL Hit">SL Hit</option>
               <option value="TP Hit">TP Hit</option>
@@ -409,7 +411,7 @@ export default function TradeForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
               Emotional State *
             </label>
             <select
@@ -417,7 +419,7 @@ export default function TradeForm({
               value={formData.emotionalState}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
             >
               <option value="Calm">Calm</option>
               <option value="Greedy">Greedy</option>
@@ -429,13 +431,13 @@ export default function TradeForm({
         </div>
 
         {/* Pricing & Position */}
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <div className="border-t border-gray-700/50 pt-6">
+          <h3 className="text-base font-semibold mb-4 text-gray-100">
             Pricing & Position
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Option Entry Price (₹) *
               </label>
               <input
@@ -446,12 +448,12 @@ export default function TradeForm({
                 required
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Option Exit Price (₹) *
               </label>
               <input
@@ -462,12 +464,12 @@ export default function TradeForm({
                 required
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Planned Stop Loss Price (₹)
               </label>
               <input
@@ -477,7 +479,7 @@ export default function TradeForm({
                 onChange={handleInputChange}
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
               <p className="mt-1 text-xs text-gray-500">
                 Used to auto-calc risk: |Entry - SL| × Position Size.
@@ -485,7 +487,7 @@ export default function TradeForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Position Size (Lots) *
               </label>
               <input
@@ -496,12 +498,12 @@ export default function TradeForm({
                 required
                 step="1"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Target / Expected Price (₹) *
               </label>
               <input
@@ -512,7 +514,7 @@ export default function TradeForm({
                 required
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
               <p className="mt-1 text-xs text-gray-500">
                 Option price you expect to exit at when the trade hits target.
@@ -521,39 +523,41 @@ export default function TradeForm({
           </div>
 
           {/* Calculated Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <div className="bg-gray-50 p-3 rounded-md">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <div className="bg-[#020617] p-4 rounded-xl border border-slate-700 shadow-lg">
+              <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
                 Realized P&L (₹)
               </label>
-              <div className="text-lg font-semibold text-gray-800">
+              <div className={`text-2xl font-bold ${
+                formData.realizedPnL >= 0 ? "text-green-400" : "text-red-400"
+              }`}>
                 ₹{formData.realizedPnL.toFixed(2)}
               </div>
             </div>
 
-            <div className="bg-gray-50 p-3 rounded-md">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="bg-[#020617] p-4 rounded-xl border border-slate-700 shadow-lg">
+              <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
                 Realized R:R
               </label>
-              <div className="text-lg font-semibold text-gray-800">
+              <div className="text-2xl font-bold text-amber-300">
                 {formData.realizedRR.toFixed(2)}
               </div>
             </div>
 
-            <div className="bg-gray-50 p-3 rounded-md">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <div className="bg-[#020617] p-4 rounded-xl border border-slate-700 shadow-lg">
+              <label className="block text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">
                 Expected R:R
               </label>
-              <div className="text-lg font-semibold text-gray-800">
-                {formData.expectedRR?.toFixed(2)}
+              <div className="text-2xl font-bold text-amber-300">
+                {formData.expectedRR?.toFixed(2) ?? "0.00"}
               </div>
             </div>
           </div>
         </div>
 
         {/* Checklist */}
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <div className="border-t border-gray-700/50 pt-6">
+          <h3 className="text-base font-semibold mb-4 text-gray-100">
             Trade Checklist
           </h3>
           <div className="space-y-3">
@@ -563,9 +567,9 @@ export default function TradeForm({
                 name="checklist.H1_TrendAligned"
                 checked={formData.checklist.H1_TrendAligned}
                 onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-300">
                 1H Bias aligned with trade direction
               </span>
             </label>
@@ -576,9 +580,9 @@ export default function TradeForm({
                 name="checklist.M15_TrendAligned"
                 checked={formData.checklist.M15_TrendAligned}
                 onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-300">
                 15M Bias aligned with trade direction
               </span>
             </label>
@@ -589,9 +593,9 @@ export default function TradeForm({
                 name="checklist.M05_StructureMet"
                 checked={formData.checklist.M05_StructureMet}
                 onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-300">
                 5M Structure Met (
                 {formData.strategyId === "Setup 1"
                   ? "Approached Key Level"
@@ -601,7 +605,7 @@ export default function TradeForm({
             </label>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Confirmations (comma-separated) *
               </label>
               <input
@@ -610,7 +614,7 @@ export default function TradeForm({
                 value={formData.checklist.Confirmations}
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 placeholder="e.g., BoS, Liquidity Grab, OB Test, Reversal Candle, Trend Line Bounce"
               />
             </div>
@@ -621,23 +625,32 @@ export default function TradeForm({
                 name="checklist.ExitRuleFollowed"
                 checked={formData.checklist.ExitRuleFollowed}
                 onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-300">
                 Exit rule matched initial plan or management rules
               </span>
             </label>
           </div>
 
-          <div className="mt-4 bg-blue-50 p-3 rounded-md">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={formData.isAdherent}
-                disabled
-                className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded"
-              />
-              <span className="text-sm font-medium text-gray-700">
+          <div className={`mt-4 p-4 rounded-xl border-2 transition-all duration-300 ${
+            formData.isAdherent 
+              ? "bg-green-500/10 border-green-500/30 shadow-lg shadow-green-500/10" 
+              : "bg-red-500/10 border-red-500/30 shadow-lg shadow-red-500/10"
+          }`}>
+            <label className="flex items-center gap-3">
+              <div className={`w-5 h-5 rounded-md flex items-center justify-center ${
+                formData.isAdherent ? "bg-green-500" : "bg-red-500"
+              }`}>
+                {formData.isAdherent && (
+                  <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                )}
+              </div>
+              <span className={`text-sm font-semibold ${
+                formData.isAdherent ? "text-green-400" : "text-red-400"
+              }`}>
                 Trade Adherent (Auto-calculated)
               </span>
             </label>
@@ -645,13 +658,13 @@ export default function TradeForm({
         </div>
 
         {/* Performance Tracking */}
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <div className="border-t border-gray-700/50 pt-6">
+          <h3 className="text-base font-semibold mb-4 text-gray-100">
             Trade Performance Tracking
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Max Favorable Excursion (₹)
               </label>
               <input
@@ -660,11 +673,11 @@ export default function TradeForm({
                 value={formData.maxFavorableExcursion ?? 0}
                 onChange={handleInputChange}
                 step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Max Adverse Excursion (₹)
               </label>
               <input
@@ -673,11 +686,11 @@ export default function TradeForm({
                 value={formData.maxAdverseExcursion ?? 0}
                 onChange={handleInputChange}
                 step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Peak Profit (₹)
               </label>
               <input
@@ -686,11 +699,11 @@ export default function TradeForm({
                 value={formData.peakProfit ?? 0}
                 onChange={handleInputChange}
                 step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Time to Peak (minutes)
               </label>
               <input
@@ -699,27 +712,27 @@ export default function TradeForm({
                 value={formData.timeToPeakMinutes ?? 0}
                 onChange={handleInputChange}
                 step="1"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
             </div>
           </div>
         </div>
 
         {/* Market Conditions */}
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <div className="border-t border-gray-700/50 pt-6">
+          <h3 className="text-base font-semibold mb-4 text-gray-100">
             Market Conditions
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Volatility
               </label>
               <select
                 name="volatility"
                 value={formData.volatility ?? "Medium"}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -727,14 +740,14 @@ export default function TradeForm({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 1H Market Trend
               </label>
               <select
                 name="trendH1"
                 value={formData.trendH1 ?? "Sideways"}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
                 <option value="Bullish">Bullish</option>
                 <option value="Bearish">Bearish</option>
@@ -742,14 +755,14 @@ export default function TradeForm({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 15M Market Trend
               </label>
               <select
                 name="trendM15"
                 value={formData.trendM15 ?? "Sideways"}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
                 <option value="Bullish">Bullish</option>
                 <option value="Bearish">Bearish</option>
@@ -757,14 +770,14 @@ export default function TradeForm({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 5M Market Trend
               </label>
               <select
                 name="trendM5"
                 value={formData.trendM5 ?? "Sideways"}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
                 <option value="Bullish">Bullish</option>
                 <option value="Bearish">Bearish</option>
@@ -772,14 +785,14 @@ export default function TradeForm({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Volume Profile
               </label>
               <select
                 name="volumeProfile"
                 value={formData.volumeProfile ?? "Normal"}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               >
                 <option value="Low">Low</option>
                 <option value="Normal">Normal</option>
@@ -790,13 +803,13 @@ export default function TradeForm({
         </div>
 
         {/* Trade Quality & Psychology */}
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <div className="border-t border-gray-700/50 pt-6">
+          <h3 className="text-base font-semibold mb-4 text-gray-100">
             Trade Quality & Psychology
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Confidence Level (1-10)
               </label>
               <input
@@ -807,11 +820,11 @@ export default function TradeForm({
                 min={1}
                 max={10}
                 step={1}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Setup Quality (1-10)
               </label>
               <input
@@ -822,11 +835,11 @@ export default function TradeForm({
                 min={1}
                 max={10}
                 step={1}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Trade Number (today)
               </label>
               <input
@@ -836,11 +849,11 @@ export default function TradeForm({
                 onChange={handleInputChange}
                 min={1}
                 step={1}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Account Balance (₹)
               </label>
               <input
@@ -849,7 +862,7 @@ export default function TradeForm({
                 value={formData.accountBalance ?? 0}
                 onChange={handleInputChange}
                 step="0.01"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
               <p className="mt-1 text-xs text-gray-500">
                 Enter your account balance <span className="font-semibold">before this trade</span>.
@@ -860,8 +873,8 @@ export default function TradeForm({
         </div>
 
         {/* Strategy Refinement */}
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <div className="border-t border-gray-700/50 pt-6">
+          <h3 className="text-base font-semibold mb-4 text-gray-100">
             Strategy Refinement
           </h3>
           <div className="space-y-3">
@@ -871,9 +884,9 @@ export default function TradeForm({
                 name="partialExit"
                 checked={formData.partialExit ?? false}
                 onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-300">
                 Took partial exits during the trade
               </span>
             </label>
@@ -883,9 +896,9 @@ export default function TradeForm({
                 name="trailingStopUsed"
                 checked={formData.trailingStopUsed ?? false}
                 onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-300">
                 Used trailing stop management
               </span>
             </label>
@@ -895,9 +908,9 @@ export default function TradeForm({
                 name="breakevenMoved"
                 checked={formData.breakevenMoved ?? false}
                 onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-300">
                 Moved stop-loss to breakeven
               </span>
             </label>
@@ -905,8 +918,8 @@ export default function TradeForm({
         </div>
 
         {/* Review & Learning */}
-        <div className="border-t pt-4">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">
+        <div className="border-t border-gray-700/50 pt-6">
+          <h3 className="text-base font-semibold mb-4 text-gray-100">
             Review & Learning
           </h3>
           <div className="space-y-4">
@@ -918,12 +931,12 @@ export default function TradeForm({
                 onChange={handleInputChange}
                 className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
               />
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-gray-300">
                 I would take this exact same setup again
               </span>
             </label>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 What worked well?
               </label>
               <textarea
@@ -931,12 +944,12 @@ export default function TradeForm({
                 value={formData.whatWorked ?? ""}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 placeholder="Entry timing, patience, following plan, etc."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Mistakes / What went wrong?
               </label>
               <textarea
@@ -944,12 +957,12 @@ export default function TradeForm({
                 value={formData.mistakes ?? ""}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 placeholder="Emotional decisions, missed rules, management errors, etc."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Lessons learned
               </label>
               <textarea
@@ -957,7 +970,7 @@ export default function TradeForm({
                 value={formData.lessonsLearned ?? ""}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
                 placeholder="Concrete rules or insights you want to remember."
               />
             </div>
@@ -965,13 +978,13 @@ export default function TradeForm({
         </div>
 
         {/* Submit Button */}
-        <div className="border-t pt-4">
+        <div className="border-t border-gray-700/50 pt-6">
           {submitMessage && (
             <div
               className={`mb-4 p-3 rounded-md ${
                 submitMessage.type === "success"
-                  ? "bg-green-50 text-green-800"
-                  : "bg-red-50 text-red-800"
+                  ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                  : "bg-red-500/20 text-red-400 border border-red-500/30"
               }`}
             >
               {submitMessage.text}
@@ -981,7 +994,7 @@ export default function TradeForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+            className="w-full bg-amber-400 text-gray-900 py-3 px-6 rounded-xl hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed font-semibold transition-all duration-200 shadow-lg shadow-amber-400/40 hover:shadow-xl hover:shadow-amber-400/60 hover:-translate-y-0.5"
           >
             {isSubmitting ? "Saving..." : "Save Trade"}
           </button>

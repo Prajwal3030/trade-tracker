@@ -22,11 +22,13 @@ export default function TradeFilters({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h3 className="text-lg font-semibold mb-4 text-gray-800">Filters</h3>
+    <div className="bg-[#1f2937] rounded-lg shadow-lg p-4 mb-4 border border-gray-700/50">
+      <div className="flex items-center gap-2 mb-4">
+        <h3 className="text-base font-semibold text-gray-100">Filters</h3>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Strategy
           </label>
           <select
@@ -37,7 +39,7 @@ export default function TradeFilters({
                 e.target.value as "Setup 1" | "Setup 2" | ""
               )
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
           >
             <option value="">All</option>
             <option value="Setup 1">Setup 1</option>
@@ -46,7 +48,7 @@ export default function TradeFilters({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Direction
           </label>
           <select
@@ -57,7 +59,7 @@ export default function TradeFilters({
                 e.target.value as "Long" | "Short" | ""
               )
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
           >
             <option value="">All</option>
             <option value="Long">Long</option>
@@ -66,7 +68,7 @@ export default function TradeFilters({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Adherence
           </label>
           <select
@@ -87,7 +89,7 @@ export default function TradeFilters({
                   : false
               )
             }
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
           >
             <option value="">All</option>
             <option value="true">Adherent</option>
@@ -96,26 +98,26 @@ export default function TradeFilters({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             Start Date
           </label>
           <input
             type="date"
             value={filters.startDate || ""}
             onChange={(e) => handleChange("startDate", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-300 mb-1">
             End Date
           </label>
           <input
             type="date"
             value={filters.endDate || ""}
             onChange={(e) => handleChange("endDate", e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 bg-[#111827] border border-gray-700 rounded-md text-gray-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
           />
         </div>
       </div>

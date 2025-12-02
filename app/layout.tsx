@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/Sidebar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Personal Trade Strategy Tracker",
+  title: "Tracer - Personal Trade Strategy Tracker",
   description: "Log, view, and analyze your trade data for Setup 1 and Setup 2 strategies",
 };
 
@@ -28,7 +29,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <main className="flex-1 md:ml-64">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

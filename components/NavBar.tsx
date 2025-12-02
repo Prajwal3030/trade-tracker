@@ -14,7 +14,7 @@ export default function NavBar() {
 
   return (
     <nav className="mb-8">
-      <div className="inline-flex items-center rounded-full bg-white/70 backdrop-blur px-2 py-1 shadow-sm ring-1 ring-slate-200">
+      <div className="inline-flex items-center rounded-full bg-slate-800/80 backdrop-blur px-2 py-1 shadow-sm ring-1 ring-slate-700 border border-slate-700">
         {links.map((link) => {
           const active = pathname === link.href;
           return (
@@ -23,8 +23,8 @@ export default function NavBar() {
               href={link.href}
               className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${
                 active
-                  ? "bg-slate-900 text-slate-50 shadow"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                  ? "bg-cyan-500 text-white shadow"
+                  : "text-slate-300 hover:text-slate-100 hover:bg-slate-700"
               }`}
             >
               {link.label}
