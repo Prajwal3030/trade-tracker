@@ -35,7 +35,7 @@ export default function WinLossChart({ trades }: WinLossChartProps) {
             cy="50%"
             labelLine={false}
             label={({ name, percent, value }) => {
-              if (percent < 0.05) return ""; // Hide labels for small slices
+              if (!percent || percent < 0.05) return ""; // Hide labels for small slices
               return `${name}\n${value} (${(percent * 100).toFixed(0)}%)`;
             }}
             outerRadius={90}

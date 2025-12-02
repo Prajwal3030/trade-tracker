@@ -258,7 +258,11 @@ export default function AnalyticsPage() {
 
         {isLoading && (
           <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-xl p-12 text-center border border-gray-700/50 backdrop-blur-sm">
-            <div className="text-6xl mb-4 animate-pulse">📊</div>
+            <div className="flex justify-center mb-4 animate-pulse">
+              <svg className="w-16 h-16 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
             <p className="text-gray-400 text-lg">Loading trades...</p>
           </div>
         )}
@@ -364,7 +368,9 @@ export default function AnalyticsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-gray-700/50 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">🔥</span>
+                      <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
+                      </svg>
                       <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         Current Streak
                       </div>
@@ -387,7 +393,9 @@ export default function AnalyticsPage() {
                   </div>
                   <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-green-500/20 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">⭐</span>
+                      <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
                       <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         Best Win Streak
                       </div>
@@ -398,7 +406,9 @@ export default function AnalyticsPage() {
                   </div>
                   <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-xl shadow-lg p-5 border border-red-500/20 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="text-xl">⚠️</span>
+                      <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
                       <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
                         Worst Loss Streak
                       </div>
@@ -493,7 +503,11 @@ export default function AnalyticsPage() {
 
         {!isLoading && trades.length === 0 && (
           <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-xl p-12 text-center border border-gray-700/50 backdrop-blur-sm">
-            <div className="text-6xl mb-4">📊</div>
+            <div className="flex justify-center mb-4">
+              <svg className="w-16 h-16 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+            </div>
             <p className="text-gray-400 text-lg">No trades found. Start logging trades to see analytics!</p>
           </div>
         )}

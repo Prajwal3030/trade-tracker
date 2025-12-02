@@ -5,9 +5,10 @@ import { Trade } from "@/types/trade";
 interface TradeTableProps {
   trades: Trade[];
   onEdit?: (trade: Trade) => void;
+  onDelete?: (trade: Trade) => void;
 }
 
-export default function TradeTable({ trades, onEdit }: TradeTableProps) {
+export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps) {
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleString("en-IN", {
       year: "numeric",
@@ -29,7 +30,11 @@ export default function TradeTable({ trades, onEdit }: TradeTableProps) {
   if (trades.length === 0) {
     return (
       <div className="bg-gradient-to-br from-gray-800/90 to-gray-900/90 rounded-2xl shadow-xl p-12 text-center border border-gray-700/50 backdrop-blur-sm">
-        <div className="text-6xl mb-4">📊</div>
+        <div className="flex justify-center mb-4">
+          <svg className="w-16 h-16 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
         <p className="text-gray-400 text-lg">No trades found. Start logging your trades to see them here.</p>
       </div>
     );
@@ -74,7 +79,7 @@ export default function TradeTable({ trades, onEdit }: TradeTableProps) {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Adherent
               </th>
-              {onEdit && (
+              {(onEdit || onDelete) && (
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                   Actions
                 </th>
@@ -142,15 +147,28 @@ export default function TradeTable({ trades, onEdit }: TradeTableProps) {
                     {trade.isAdherent ? "Yes" : "No"}
                   </span>
                 </td>
-                {onEdit && (
+                {(onEdit || onDelete) && (
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <button
-                      type="button"
-                      onClick={() => onEdit(trade)}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-400 text-gray-900 hover:bg-amber-500 transition-colors"
-                    >
-                      Edit
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {onEdit && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(trade)}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-400 text-gray-900 hover:bg-amber-500 transition-colors"
+                        >
+                          Edit
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(trade)}
+                          className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </td>
                 )}
               </tr>

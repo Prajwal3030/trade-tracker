@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 
 const links = [
   { href: "/log", label: "Log New Trade", key: "log" },
@@ -130,17 +131,20 @@ export default function Sidebar() {
         {/* Logo/Title */}
         <div className="p-5 border-b border-gray-700 bg-[#1f2937]">
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 via-cyan-400 to-sky-500 flex items-center justify-center shadow-xl shadow-emerald-400/30">
-                <span className="text-white font-bold text-lg">T</span>
-              </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-400 border-2 border-gray-800 shadow-md" />
+            <div className="relative flex-shrink-0">
+              <Image
+                src="/logo.png"
+                alt="Tracer Logo"
+                width={96}
+                height={96}
+                className="w-24 h-24 object-contain"
+              />
             </div>
-            <div className="flex flex-col">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-100 via-amber-200 to-amber-300 bg-clip-text text-transparent">
+            <div className="flex flex-col justify-center min-w-0">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-100 via-amber-200 to-amber-300 bg-clip-text text-transparent leading-none">
                 Tracer
               </h1>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-400 leading-tight mt-0.5">
                 Trade strategy journal & analytics
               </p>
             </div>

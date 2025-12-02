@@ -11,6 +11,7 @@ import {
   doc,
   getDoc,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Trade, TradeFilters, TradeMetrics } from "@/types/trade";
@@ -252,6 +253,16 @@ export const updateTrade = async (
     await updateDoc(ref, tradeData);
   } catch (error) {
     console.error("Error updating trade:", error);
+    throw error;
+  }
+};
+
+export const deleteTrade = async (id: string): Promise<void> => {
+  try {
+    const ref = doc(db, "trades", id);
+    await deleteDoc(ref);
+  } catch (error) {
+    console.error("Error deleting trade:", error);
     throw error;
   }
 };

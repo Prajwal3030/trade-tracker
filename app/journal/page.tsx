@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import TradeFilters from "@/components/TradeFilters";
 import TradeTable from "@/components/TradeTable";
 import TradeForm from "@/components/TradeForm";
-import { getTrades } from "@/lib/trades";
+import { getTrades, deleteTrade } from "@/lib/trades";
 import { Trade, TradeFilters as TradeFiltersType } from "@/types/trade";
 
 export default function JournalPage() {
@@ -29,6 +29,22 @@ export default function JournalPage() {
     loadTrades();
   }, [loadTrades]);
 
+  const handleDelete = async (trade: Trade) => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete this trade?\n\nAsset: ${trade.asset}\nStrategy: ${trade.strategyId}\nP&L: ₹${trade.realizedPnL.toFixed(2)}\n\nThis action cannot be undone.`
+      )
+    ) {
+      try {
+        await deleteTrade(trade.id);
+        await loadTrades();
+      } catch (error) {
+        console.error("Error deleting trade:", error);
+        alert("Failed to delete trade. Please try again.");
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#111827]">
       <div className="container mx-auto px-6 py-6 max-w-7xl">
@@ -39,7 +55,11 @@ export default function JournalPage() {
             Loading trades...
           </div>
         ) : (
-          <TradeTable trades={trades} onEdit={(trade) => setEditingTrade(trade)} />
+          <TradeTable
+            trades={trades}
+            onEdit={(trade) => setEditingTrade(trade)}
+            onDelete={handleDelete}
+          />
         )}
 
         {editingTrade && (
