@@ -22,11 +22,11 @@ export default function TradeFilters({
   };
 
   return (
-    <div className="bg-[#1f2937] rounded-lg shadow-lg p-4 mb-4 border border-gray-700/50">
-      <div className="flex items-center gap-2 mb-4">
-        <h3 className="text-base font-semibold text-gray-100">Filters</h3>
+    <div className="bg-[#1f2937] rounded-lg shadow-lg p-4 md:p-6 mb-4 border border-gray-700/50">
+      <div className="flex items-center gap-2 mb-3 md:mb-4">
+        <h3 className="text-sm md:text-base font-semibold text-gray-100">Filters</h3>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1">
             Strategy

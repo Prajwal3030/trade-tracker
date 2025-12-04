@@ -8,6 +8,7 @@ export interface Checklist {
 
 export interface Trade {
   id?: string;
+  userId: string;
   asset: string;
   strategyId: "Setup 1" | "Setup 2";
   direction: "Long" | "Short";

@@ -11,11 +11,12 @@ export default function ConditionalMain({ children }: { children: React.ReactNod
     setMounted(true);
   }, []);
 
-  // Remove left margin on landing page when sidebar is hidden
-  const marginClass = mounted && pathname === "/" ? "" : "md:ml-64";
+  // Remove left margin on landing page and login page when sidebar is hidden
+  // On mobile, never add left margin
+  const marginClass = mounted && (pathname === "/" || pathname === "/login") ? "" : "md:ml-64";
 
   return (
-    <main className={`flex-1 ${marginClass}`} suppressHydrationWarning>
+    <main className={`flex-1 ${marginClass} pt-16 md:pt-0`} suppressHydrationWarning>
       {children}
     </main>
   );

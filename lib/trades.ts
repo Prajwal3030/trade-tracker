@@ -16,6 +16,14 @@ import {
 import { db } from "./firebase";
 import { Trade, TradeFilters, TradeMetrics } from "@/types/trade";
 
+// Helper to ensure db is initialized
+const ensureDb = () => {
+  if (!db) {
+    throw new Error("Firebase Firestore is not initialized. Please check your Firebase configuration.");
+  }
+  return db;
+};
+
 export const saveTrade = async (trade: Omit<Trade, "id">): Promise<string> => {
   try {
     const entry =
@@ -40,7 +48,7 @@ export const saveTrade = async (trade: Omit<Trade, "id">): Promise<string> => {
 
     try {
       const lastTradeSnapshot = await getDocs(
-        query(collection(db, "trades"), orderBy("entryTime", "desc"), limit(1))
+        query(collection(ensureDb(), "trades"), orderBy("entryTime", "desc"), limit(1))
       );
 
       if (!lastTradeSnapshot.empty) {
@@ -91,7 +99,7 @@ export const saveTrade = async (trade: Omit<Trade, "id">): Promise<string> => {
       tradeNumber,
     };
 
-    const docRef = await addDoc(collection(db, "trades"), tradeData);
+    const docRef = await addDoc(collection(ensureDb(), "trades"), tradeData);
     return docRef.id;
   } catch (error) {
     console.error("Error saving trade:", error);
@@ -99,9 +107,16 @@ export const saveTrade = async (trade: Omit<Trade, "id">): Promise<string> => {
   }
 };
 
-export const getTrades = async (filters?: TradeFilters): Promise<Trade[]> => {
+export const getTrades = async (
+  filters: TradeFilters = {},
+  userId?: string
+): Promise<Trade[]> => {
   try {
     const constraints: QueryConstraint[] = [];
+
+    if (userId) {
+      constraints.push(where("userId", "==", userId));
+    }
 
     if (filters?.strategyId) {
       constraints.push(where("strategyId", "==", filters.strategyId));
@@ -115,7 +130,7 @@ export const getTrades = async (filters?: TradeFilters): Promise<Trade[]> => {
       constraints.push(where("isAdherent", "==", filters.isAdherent));
     }
 
-    const q = query(collection(db, "trades"), ...constraints);
+    const q = query(collection(ensureDb(), "trades"), ...constraints);
     const querySnapshot = await getDocs(q);
 
     let trades: Trade[] = querySnapshot.docs.map((doc) => {
@@ -204,7 +219,7 @@ export const calculateMetrics = (trades: Trade[]): TradeMetrics => {
 
 export const getTradeById = async (id: string): Promise<Trade | null> => {
   try {
-    const ref = doc(db, "trades", id);
+    const ref = doc(ensureDb(), "trades", id);
     const snapshot = await getDoc(ref);
     if (!snapshot.exists()) return null;
     const data = snapshot.data();
@@ -249,7 +264,7 @@ export const updateTrade = async (
       timeInTradeMinutes,
     };
 
-    const ref = doc(db, "trades", id);
+    const ref = doc(ensureDb(), "trades", id);
     await updateDoc(ref, tradeData);
   } catch (error) {
     console.error("Error updating trade:", error);
@@ -259,7 +274,7 @@ export const updateTrade = async (
 
 export const deleteTrade = async (id: string): Promise<void> => {
   try {
-    const ref = doc(db, "trades", id);
+    const ref = doc(ensureDb(), "trades", id);
     await deleteDoc(ref);
   } catch (error) {
     console.error("Error deleting trade:", error);

@@ -16,8 +16,8 @@ export default function ConditionalSidebar() {
     return null;
   }
   
-  // Hide sidebar on landing page (home page)
-  if (pathname === "/") {
+  // Hide sidebar on landing page and login page
+  if (pathname === "/" || pathname === "/login") {
     return null;
   }
   

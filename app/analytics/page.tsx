@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import Dashboard from "@/components/Dashboard";
 import TradeFilters from "@/components/TradeFilters";
 import { getTrades, calculateMetrics } from "@/lib/trades";
@@ -10,6 +11,7 @@ import WinLossChart from "@/components/charts/WinLossChart";
 import HourlyChart from "@/components/charts/HourlyChart";
 import DailyChart from "@/components/charts/DailyChart";
 import RRChart from "@/components/charts/RRChart";
+import { useAuth } from "@/components/AuthProvider";
 
 interface TimeBucketStat {
   key: string;
@@ -202,7 +204,11 @@ function summarizePerformance(trades: Trade[]): PerformanceSummary {
     0
   );
   const totalPeak = withPerf.reduce(
-    (sum, t) => sum + (t.peakProfit ?? 0),
+    (sum, t) => {
+      const peak = typeof t.peakProfit === "number" ? t.peakProfit : 0;
+      // Treat any negative stored peak values as 0 to align with UI logic
+      return sum + Math.max(0, peak);
+    },
     0
   );
   const totalTimeToPeak = withPerf.reduce(
@@ -224,22 +230,35 @@ export default function AnalyticsPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [filters, setFilters] = useState<TradeFiltersType>({});
   const [isLoading, setIsLoading] = useState(false);
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
   const loadTrades = useCallback(async () => {
+    if (!user) {
+      setTrades([]);
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const fetched = await getTrades(filters);
+      const fetched = await getTrades(filters, user.uid);
       setTrades(fetched);
     } catch (error) {
       console.error("Error loading trades:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, user]);
 
   useEffect(() => {
-    loadTrades();
-  }, [loadTrades]);
+    if (!loading && !user) {
+      router.replace("/login");
+      return;
+    }
+    if (user) {
+      loadTrades();
+    }
+  }, [loading, user, loadTrades, router]);
 
   const metrics = useMemo(() => calculateMetrics(trades), [trades]);
   const byHour = useMemo(() => summarizeByHour(trades), [trades]);
@@ -250,7 +269,7 @@ export default function AnalyticsPage() {
 
   return (
     <div className="min-h-screen bg-[#111827]">
-      <div className="container mx-auto px-6 py-6 max-w-7xl">
+      <div className="container mx-auto px-4 md:px-6 py-4 md:py-6 max-w-7xl">
 
         <TradeFilters filters={filters} onFilterChange={setFilters} />
 
@@ -270,10 +289,10 @@ export default function AnalyticsPage() {
         {!isLoading && trades.length > 0 && (
           <>
             {/* Charts Section - Main Visualizations */}
-            <div className="mb-12">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-1 h-8 bg-gradient-to-b from-cyan-500 to-blue-600 rounded-full" />
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-slate-100 to-cyan-200 bg-clip-text text-transparent">
+            <div className="mb-8 md:mb-12">
+              <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                <div className="w-1 h-6 md:h-8 bg-gradient-to-b from-cyan-500 to-blue-600 rounded-full" />
+                <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-100 to-cyan-200 bg-clip-text text-transparent">
                   Visual Analytics
                 </h2>
               </div>

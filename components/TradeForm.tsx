@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { saveTrade, updateTrade } from "@/lib/trades";
 import { Trade, Checklist } from "@/types/trade";
+import { useAuth } from "@/components/AuthProvider";
 
 interface TradeFormProps {
   onTradeSaved?: () => void;
@@ -15,7 +16,10 @@ export default function TradeForm({
   mode = "create",
   tradeToEdit,
 }: TradeFormProps) {
+  const { user } = useAuth();
+
   const [formData, setFormData] = useState<Omit<Trade, "id">>({
+    userId: "",
     asset: "",
     strategyId: "Setup 1",
     direction: "Long",
@@ -108,8 +112,12 @@ export default function TradeForm({
     const expectedRR =
       riskPerUnit > 0 ? Math.abs(rewardPerUnit) / riskPerUnit : 0;
 
-    const peakPerUnit =
-      (formData.maxFavorableExcursion ?? 0) - formData.optionEntryPrice;
+    // Peak profit should only be calculated if MFE is greater than entry price
+    // Otherwise, it should be 0 (no peak profit) or use manual entry
+    const maxFavorableExcursion = formData.maxFavorableExcursion ?? 0;
+    const peakPerUnit = maxFavorableExcursion > formData.optionEntryPrice
+      ? maxFavorableExcursion - formData.optionEntryPrice
+      : 0;
     const peakProfit = peakPerUnit * formData.positionSize;
 
     setFormData((prev) => ({
@@ -210,15 +218,21 @@ export default function TradeForm({
     setSubmitMessage(null);
 
     try {
+      if (!user) {
+        throw new Error("You must be logged in to save trades.");
+      }
+
       if (mode === "edit" && tradeToEdit?.id) {
         await updateTrade(tradeToEdit.id, {
           ...formData,
+          userId: user.uid,
           entryTime: new Date(formData.entryTime),
           exitTime: new Date(formData.exitTime),
         });
       } else {
         await saveTrade({
           ...formData,
+          userId: user.uid,
           entryTime: new Date(formData.entryTime),
           exitTime: new Date(formData.exitTime),
         });
@@ -237,6 +251,7 @@ export default function TradeForm({
       // Reset form only in create mode
       if (mode === "create") {
         setFormData({
+          userId: user.uid,
           asset: "",
           strategyId: "Setup 1",
           direction: "Long",
@@ -300,15 +315,15 @@ export default function TradeForm({
   };
 
   return (
-    <div className="bg-[#1f2937] rounded-lg shadow-lg p-6 border border-gray-700/50">
-      <div className="flex items-center gap-3 mb-6">
-        <h2 className="text-xl font-semibold text-gray-100">
+    <div className="bg-[#1f2937] rounded-lg shadow-lg p-4 md:p-6 border border-gray-700/50">
+      <div className="flex items-center gap-3 mb-4 md:mb-6">
+        <h2 className="text-lg md:text-xl font-semibold text-gray-100">
           {mode === "edit" ? "Edit Trade" : "Log New Trade"}
         </h2>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
         {/* Basic Trade Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Asset/Instrument *
@@ -360,36 +375,78 @@ export default function TradeForm({
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Entry Time *
             </label>
-            <input
-              type="datetime-local"
-              name="entryTime"
-              value={
-                formData.entryTime instanceof Date
-                  ? formData.entryTime.toISOString().slice(0, 16)
-                  : formData.entryTime
-              }
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
+            <div className="relative">
+              <input
+                type="datetime-local"
+                name="entryTime"
+                value={
+                  formData.entryTime instanceof Date
+                    ? formData.entryTime.toISOString().slice(0, 16)
+                    : formData.entryTime
+                }
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 pr-10 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                style={{
+                  colorScheme: "dark",
+                  WebkitAppearance: "none",
+                }}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-1">
               Exit Time *
             </label>
-            <input
-              type="datetime-local"
-              name="exitTime"
-              value={
-                formData.exitTime instanceof Date
-                  ? formData.exitTime.toISOString().slice(0, 16)
-                  : formData.exitTime
-              }
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            />
+            <div className="relative">
+              <input
+                type="datetime-local"
+                name="exitTime"
+                value={
+                  formData.exitTime instanceof Date
+                    ? formData.exitTime.toISOString().slice(0, 16)
+                    : formData.exitTime
+                }
+                onChange={handleInputChange}
+                required
+                className="w-full px-3 py-2 pr-10 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                style={{
+                  colorScheme: "dark",
+                  WebkitAppearance: "none",
+                }}
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>

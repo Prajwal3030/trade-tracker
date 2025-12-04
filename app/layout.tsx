@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ConditionalSidebar from "@/components/ConditionalSidebar";
 import ConditionalMain from "@/components/ConditionalMain";
+import { AuthProvider } from "@/components/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,12 +31,14 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <div className="flex min-h-screen" suppressHydrationWarning>
-          <ConditionalSidebar />
-          <ConditionalMain>
-            {children}
-          </ConditionalMain>
-        </div>
+        <AuthProvider>
+          <div className="flex min-h-screen" suppressHydrationWarning>
+            <ConditionalSidebar />
+            <ConditionalMain>
+              {children}
+            </ConditionalMain>
+          </div>
+        </AuthProvider>
       </body>
     </html>
   );
