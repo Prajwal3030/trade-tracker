@@ -16,7 +16,7 @@ export default function ConditionalMain({ children }: { children: React.ReactNod
   const marginClass = mounted && (pathname === "/" || pathname === "/login") ? "" : "md:ml-64";
 
   return (
-    <main className={`flex-1 ${marginClass} pt-16 md:pt-0`} suppressHydrationWarning>
+    <main className={`flex-1 ${marginClass} pt-[64px] md:pt-0`} suppressHydrationWarning>
       {children}
     </main>
   );

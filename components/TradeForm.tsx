@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { saveTrade, updateTrade } from "@/lib/trades";
-import { Trade, Checklist } from "@/types/trade";
+import { getStrategies, getStrategyById } from "@/lib/strategies";
+import { Trade, Checklist, Strategy, ChecklistItem } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
+import { MoneyIcon, ChecklistIcon, ChartIcon, GlobeIcon, BrainIcon, BookIcon, EditIcon, DocumentIcon } from "@/components/Icons";
 
 interface TradeFormProps {
   onTradeSaved?: () => void;
@@ -60,9 +62,6 @@ export default function TradeForm({
     winStreak: 0,
     lossStreak: 0,
     accountBalance: 0,
-    partialExit: false,
-    trailingStopUsed: false,
-    breakevenMoved: false,
     lessonsLearned: "",
     wouldTradeAgain: true,
     mistakes: "",
@@ -77,10 +76,15 @@ export default function TradeForm({
     type: "success" | "error";
     text: string;
   } | null>(null);
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
+  const [isLoadingStrategies, setIsLoadingStrategies] = useState(true);
 
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
   // When editing, hydrate form with existing trade
   useEffect(() => {
-    if (mode === "edit" && tradeToEdit) {
+    if (mode === "edit" && tradeToEdit && !initialLoadComplete) {
       const { id: _ignored, ...rest } = tradeToEdit;
       setFormData({
         ...rest,
@@ -93,8 +97,9 @@ export default function TradeForm({
             ? rest.exitTime.toISOString().slice(0, 16)
             : rest.exitTime,
       } as Omit<Trade, "id">);
+      setInitialLoadComplete(true);
     }
-  }, [mode, tradeToEdit]);
+  }, [mode, tradeToEdit, initialLoadComplete]);
 
   // Calculate realizedPnL and realizedRR whenever relevant fields change
   useEffect(() => {
@@ -165,21 +170,123 @@ export default function TradeForm({
     formData.maxAdverseExcursion,
   ]);
 
+  // Load strategies when user is available
+  useEffect(() => {
+    const loadStrategies = async () => {
+      if (!user) return;
+      try {
+        setIsLoadingStrategies(true);
+        const loadedStrategies = await getStrategies(user.uid);
+        setStrategies(loadedStrategies);
+        
+        // If there are strategies, try to find the one matching formData.strategyId
+        if (loadedStrategies.length > 0) {
+          const matching = loadedStrategies.find(s => s.name === formData.strategyId);
+          if (matching) {
+            setSelectedStrategy(matching);
+          } else if (formData.strategyId && mode === "edit") {
+            // For editing, try to load the strategy by name from formData
+            // This handles cases where strategy might not exist anymore
+            const defaultStrategy = loadedStrategies[0];
+            if (defaultStrategy) {
+              setSelectedStrategy(defaultStrategy);
+              setFormData(prev => ({ ...prev, strategyId: defaultStrategy.name }));
+            }
+          } else {
+            // Set first strategy as default
+            setSelectedStrategy(loadedStrategies[0]);
+            setFormData(prev => ({ ...prev, strategyId: loadedStrategies[0].name }));
+          }
+        }
+      } catch (error) {
+        console.error("Error loading strategies:", error);
+      } finally {
+        setIsLoadingStrategies(false);
+      }
+    };
+    loadStrategies();
+  }, [user]);
+
+  // Load strategy details when strategyId changes
+  useEffect(() => {
+    if (!formData.strategyId || !user || !strategies.length) return;
+    
+    const strategy = strategies.find(s => s.name === formData.strategyId);
+    if (strategy) {
+      const strategyChanged = !selectedStrategy || selectedStrategy.id !== strategy.id;
+      setSelectedStrategy(strategy);
+      
+      // Only rebuild checklist when strategy actually changes, not on initial load in edit mode
+      if (strategyChanged && (mode === "create" || initialLoadComplete)) {
+        // Build checklist from strategy, preserving existing values where possible
+        const existingChecklist = formData.checklist;
+        const newChecklist: Checklist = {
+          H1_TrendAligned: existingChecklist?.H1_TrendAligned || false,
+          M15_TrendAligned: existingChecklist?.M15_TrendAligned || false,
+          M05_StructureMet: existingChecklist?.M05_StructureMet || false,
+          Confirmations: existingChecklist?.Confirmations || "",
+          ExitRuleFollowed: existingChecklist?.ExitRuleFollowed || false,
+        };
+        
+        // Add dynamic checklist items, preserving existing values if they exist
+        strategy.checklistItems.forEach((item: ChecklistItem) => {
+          if (!(item.id in newChecklist)) {
+            if (item.type === "checkbox") {
+              newChecklist[item.id] = existingChecklist?.[item.id] || false;
+            } else {
+              newChecklist[item.id] = existingChecklist?.[item.id] || "";
+            }
+          }
+        });
+        
+        setFormData(prev => ({
+          ...prev,
+          checklist: newChecklist,
+        }));
+      }
+    }
+  }, [formData.strategyId, strategies, user, mode, selectedStrategy, initialLoadComplete]);
+
   // Calculate isAdherent based on checklist
   useEffect(() => {
     const checklist = formData.checklist;
-    const isAdherent =
-      checklist.H1_TrendAligned &&
-      checklist.M15_TrendAligned &&
-      checklist.M05_StructureMet &&
-      checklist.Confirmations.trim() !== "" &&
-      checklist.ExitRuleFollowed;
+    if (!selectedStrategy) {
+      // Default adherence check for backward compatibility
+      const isAdherent =
+        checklist.H1_TrendAligned &&
+        checklist.M15_TrendAligned &&
+        checklist.M05_StructureMet &&
+        checklist.Confirmations.trim() !== "" &&
+        checklist.ExitRuleFollowed;
 
+      setFormData((prev) => ({
+        ...prev,
+        isAdherent,
+      }));
+      return;
+    }
+
+    // Dynamic adherence check based on strategy
+    let allRequiredChecked = true;
+    selectedStrategy.checklistItems.forEach((item: ChecklistItem) => {
+      if (item.required || (item.type === "checkbox" && item.required !== false)) {
+        const value = checklist[item.id];
+        if (item.type === "checkbox" && !value) {
+          allRequiredChecked = false;
+        } else if (item.type === "text" && (!value || (typeof value === "string" && !value.trim()))) {
+          allRequiredChecked = false;
+        }
+      }
+    });
+    
+    // Also check default confirmations field
+    const confirmationsFilled = checklist.Confirmations.trim() !== "";
+    
     setFormData((prev) => ({
       ...prev,
-      isAdherent,
+      isAdherent: allRequiredChecked && confirmationsFilled,
     }));
-  }, [formData.checklist]);
+  }, [formData.checklist, selectedStrategy]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -200,15 +307,63 @@ export default function TradeForm({
         },
       }));
     } else {
+      if (type === "number") {
+        // Handle number inputs - convert empty string to 0, otherwise parse the number
+        const numValue = value === "" ? 0 : (isNaN(parseFloat(value)) ? 0 : parseFloat(value));
+        setFormData((prev) => ({
+          ...prev,
+          [name]: numValue,
+        }));
+      } else if (type === "checkbox") {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: checked,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+    }
+  };
+
+  const handleNumberBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // If field is empty on blur, set to default based on field type
+    if (value === "" || value === null || value === undefined) {
+      let defaultValue = 0;
+      if (name === "confidenceLevel" || name === "setupQuality") {
+        defaultValue = 5;
+      } else if (name === "tradeNumber") {
+        defaultValue = 1;
+      }
       setFormData((prev) => ({
         ...prev,
-        [name]:
-          type === "number"
-            ? parseFloat(value) || 0
-            : type === "checkbox"
-            ? checked
-            : value,
+        [name]: defaultValue,
       }));
+    } else if (!isNaN(parseFloat(value))) {
+      // Ensure valid number on blur
+      const numValue = parseFloat(value);
+      // Enforce min/max constraints
+      if (name === "confidenceLevel" || name === "setupQuality") {
+        const constrained = Math.max(1, Math.min(10, numValue));
+        setFormData((prev) => ({
+          ...prev,
+          [name]: constrained,
+        }));
+      } else if (name === "tradeNumber") {
+        const constrained = Math.max(1, numValue);
+        setFormData((prev) => ({
+          ...prev,
+          [name]: constrained,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: numValue,
+        }));
+      }
     }
   };
 
@@ -291,9 +446,6 @@ export default function TradeForm({
           winStreak: 0,
           lossStreak: 0,
           accountBalance: 0,
-          partialExit: false,
-          trailingStopUsed: false,
-          breakevenMoved: false,
           lessonsLearned: "",
           wouldTradeAgain: true,
           mistakes: "",
@@ -315,17 +467,18 @@ export default function TradeForm({
   };
 
   return (
-    <div className="bg-[#1f2937] rounded-lg shadow-lg p-4 md:p-6 border border-gray-700/50">
-      <div className="flex items-center gap-3 mb-4 md:mb-6">
-        <h2 className="text-lg md:text-xl font-semibold text-gray-100">
+    <div className="bg-[#1f2937] rounded-lg shadow-lg p-4 md:p-6 border border-gray-700/50 overflow-hidden max-w-full">
+      <div className="flex items-center gap-3 mb-5 md:mb-6 pb-4 border-b border-gray-700/50">
+        {mode === "edit" ? <EditIcon className="w-6 h-6 text-amber-400" /> : <DocumentIcon className="w-6 h-6 text-amber-400" />}
+        <h2 className="text-xl md:text-2xl font-bold bg-gradient-to-r from-amber-300 to-amber-400 bg-clip-text text-transparent">
           {mode === "edit" ? "Edit Trade" : "Log New Trade"}
         </h2>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5 md:space-y-6">
         {/* Basic Trade Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Asset/Instrument *
             </label>
             <input
@@ -334,49 +487,80 @@ export default function TradeForm({
               value={formData.asset}
               onChange={handleInputChange}
               required
-              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+              className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               placeholder="e.g., NIFTY, EURUSD"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Strategy ID *
             </label>
-            <select
-              name="strategyId"
-              value={formData.strategyId}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            >
-              <option value="Setup 1">Setup 1</option>
-              <option value="Setup 2">Setup 2</option>
-            </select>
+            <div className="relative">
+              <select
+                name="strategyId"
+                value={formData.strategyId}
+                onChange={handleInputChange}
+                required
+                disabled={isLoadingStrategies}
+                className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 disabled:opacity-50 disabled:cursor-not-allowed appearance-none cursor-pointer"
+                style={{
+                  fontSize: '16px', // Prevents zoom on iOS
+                }}
+              >
+                {isLoadingStrategies ? (
+                  <option value="">Loading strategies...</option>
+                ) : strategies.length === 0 ? (
+                  <option value="">No strategies found. Create one first.</option>
+                ) : (
+                  strategies.map((strategy) => (
+                    <option key={strategy.id} value={strategy.name} style={{ fontSize: '16px', padding: '8px' }}>
+                      {strategy.name}
+                    </option>
+                  ))
+                )}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Direction *
             </label>
-            <select
-              name="direction"
-              value={formData.direction}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            >
-              <option value="Long">Long</option>
-              <option value="Short">Short</option>
-            </select>
+            <div className="relative">
+              <select
+                name="direction"
+                value={formData.direction}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 appearance-none cursor-pointer"
+                style={{
+                  fontSize: '16px', // Prevents zoom on iOS
+                }}
+              >
+                <option value="Long" style={{ fontSize: '16px', padding: '8px' }}>Long (Buy)</option>
+                <option value="Short" style={{ fontSize: '16px', padding: '8px' }}>Short (Sell)</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="entryTime" className="block text-sm font-medium text-gray-300 mb-2 cursor-pointer">
               Entry Time *
             </label>
-            <div className="relative">
+            <div className="relative cursor-pointer">
               <input
+                id="entryTime"
                 type="datetime-local"
                 name="entryTime"
                 value={
@@ -386,13 +570,13 @@ export default function TradeForm({
                 }
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 pr-10 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                className="w-full px-4 py-3 pr-12 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 cursor-pointer hover:border-amber-400/50 transition-all"
                 style={{
                   colorScheme: "dark",
                   WebkitAppearance: "none",
                 }}
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <svg
                   className="w-5 h-5 text-gray-400"
                   fill="none"
@@ -411,11 +595,12 @@ export default function TradeForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label htmlFor="exitTime" className="block text-sm font-medium text-gray-300 mb-2 cursor-pointer">
               Exit Time *
             </label>
-            <div className="relative">
+            <div className="relative cursor-pointer">
               <input
+                id="exitTime"
                 type="datetime-local"
                 name="exitTime"
                 value={
@@ -425,13 +610,13 @@ export default function TradeForm({
                 }
                 onChange={handleInputChange}
                 required
-                className="w-full px-3 py-2 pr-10 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 cursor-pointer"
+                className="w-full px-4 py-3 pr-12 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 cursor-pointer hover:border-amber-400/50 transition-all"
                 style={{
                   colorScheme: "dark",
                   WebkitAppearance: "none",
                 }}
               />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <svg
                   className="w-5 h-5 text-gray-400"
                   fill="none"
@@ -450,93 +635,117 @@ export default function TradeForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Exit Reason *
             </label>
-            <select
-              name="exitReason"
-              value={formData.exitReason}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-            >
-              <option value="SL Hit">SL Hit</option>
-              <option value="TP Hit">TP Hit</option>
-              <option value="Manual">Manual</option>
-              <option value="Time Limit">Time Limit</option>
-            </select>
+            <div className="relative">
+              <select
+                name="exitReason"
+                value={formData.exitReason}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 appearance-none cursor-pointer"
+                style={{
+                  fontSize: '16px', // Prevents zoom on iOS
+                }}
+              >
+                <option value="SL Hit" style={{ fontSize: '16px', padding: '8px' }}>Stop Loss Hit</option>
+                <option value="TP Hit" style={{ fontSize: '16px', padding: '8px' }}>Take Profit Hit</option>
+                <option value="Manual" style={{ fontSize: '16px', padding: '8px' }}>Manual Exit</option>
+                <option value="Time Limit" style={{ fontSize: '16px', padding: '8px' }}>Time Limit Reached</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-300 mb-2">
               Emotional State *
             </label>
-            <select
-              name="emotionalState"
-              value={formData.emotionalState}
-              onChange={handleInputChange}
-              required
-              className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-            >
-              <option value="Calm">Calm</option>
-              <option value="Greedy">Greedy</option>
-              <option value="Fearful">Fearful</option>
-              <option value="Rushed">Rushed</option>
-              <option value="Revenge">Revenge</option>
-            </select>
+            <div className="relative">
+              <select
+                name="emotionalState"
+                value={formData.emotionalState}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-600 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500/50 transition-all hover:border-slate-500 appearance-none cursor-pointer"
+                style={{
+                  fontSize: '16px', // Prevents zoom on iOS
+                }}
+              >
+                <option value="Calm" style={{ fontSize: '16px', padding: '8px' }}>Calm & Composed</option>
+                <option value="Greedy" style={{ fontSize: '16px', padding: '8px' }}>Greedy</option>
+                <option value="Fearful" style={{ fontSize: '16px', padding: '8px' }}>Fearful</option>
+                <option value="Rushed" style={{ fontSize: '16px', padding: '8px' }}>Rushed / Impulsive</option>
+                <option value="Revenge" style={{ fontSize: '16px', padding: '8px' }}>Revenge Trading</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Pricing & Position */}
         <div className="border-t border-gray-700/50 pt-6">
-          <h3 className="text-base font-semibold mb-4 text-gray-100">
+          <h3 className="text-lg md:text-base font-semibold mb-5 text-gray-100 flex items-center gap-2">
+            <MoneyIcon />
             Pricing & Position
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Option Entry Price (₹) *
               </label>
               <input
                 type="number"
                 name="optionEntryPrice"
-                value={formData.optionEntryPrice}
+                value={formData.optionEntryPrice === 0 ? "" : formData.optionEntryPrice}
                 onChange={handleInputChange}
+                onBlur={handleNumberBlur}
                 required
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Option Exit Price (₹) *
               </label>
               <input
                 type="number"
                 name="optionExitPrice"
-                value={formData.optionExitPrice}
+                value={formData.optionExitPrice === 0 ? "" : formData.optionExitPrice}
                 onChange={handleInputChange}
+                onBlur={handleNumberBlur}
                 required
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Planned Stop Loss Price (₹)
               </label>
               <input
                 type="number"
                 name="stopLossPrice"
-                value={formData.stopLossPrice ?? 0}
+                value={formData.stopLossPrice === 0 ? "" : formData.stopLossPrice || ""}
                 onChange={handleInputChange}
+                onBlur={handleNumberBlur}
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
               <p className="mt-1 text-xs text-gray-500">
                 Used to auto-calc risk: |Entry - SL| × Position Size.
@@ -544,34 +753,36 @@ export default function TradeForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Position Size (Lots) *
               </label>
               <input
                 type="number"
                 name="positionSize"
-                value={formData.positionSize}
+                value={formData.positionSize === 0 ? "" : formData.positionSize}
                 onChange={handleInputChange}
+                onBlur={handleNumberBlur}
                 required
                 step="1"
                 min="0"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Target / Expected Price (₹) *
               </label>
               <input
                 type="number"
                 name="initialReward"
-                value={formData.initialReward}
+                value={formData.initialReward === 0 ? "" : formData.initialReward}
                 onChange={handleInputChange}
+                onBlur={handleNumberBlur}
                 required
                 step="0.01"
                 min="0"
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-4 py-3 text-base md:text-sm bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-600 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500/50 transition-all hover:border-slate-500"
               />
               <p className="mt-1 text-xs text-gray-500">
                 Option price you expect to exit at when the trade hits target.
@@ -614,81 +825,75 @@ export default function TradeForm({
 
         {/* Checklist */}
         <div className="border-t border-gray-700/50 pt-6">
-          <h3 className="text-base font-semibold mb-4 text-gray-100">
-            Trade Checklist
+          <h3 className="text-lg md:text-base font-semibold mb-5 text-gray-100 flex items-center gap-2 flex-wrap">
+            <ChecklistIcon />
+            <span>Trade Checklist</span>
+            {selectedStrategy && (
+              <span className="text-sm font-normal text-amber-400/70 ml-auto">
+                ({selectedStrategy.name})
+              </span>
+            )}
           </h3>
-          <div className="space-y-3">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="checklist.H1_TrendAligned"
-                checked={formData.checklist.H1_TrendAligned}
-                onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
-              />
-              <span className="text-sm text-gray-300">
-                1H Bias aligned with trade direction
-              </span>
-            </label>
-
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="checklist.M15_TrendAligned"
-                checked={formData.checklist.M15_TrendAligned}
-                onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
-              />
-              <span className="text-sm text-gray-300">
-                15M Bias aligned with trade direction
-              </span>
-            </label>
-
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="checklist.M05_StructureMet"
-                checked={formData.checklist.M05_StructureMet}
-                onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
-              />
-              <span className="text-sm text-gray-300">
-                5M Structure Met (
-                {formData.strategyId === "Setup 1"
-                  ? "Approached Key Level"
-                  : "5M HH/HL or LH/LL"}
-                )
-              </span>
-            </label>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Confirmations (comma-separated) *
-              </label>
-              <input
-                type="text"
-                name="checklist.Confirmations"
-                value={formData.checklist.Confirmations}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                placeholder="e.g., BoS, Liquidity Grab, OB Test, Reversal Candle, Trend Line Bounce"
-              />
+          {!selectedStrategy && !isLoadingStrategies && (
+            <div className="text-yellow-400 text-sm mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-md">
+              Please select a strategy first to see the checklist items.
             </div>
+          )}
+          {selectedStrategy && (
+            <div className="space-y-3">
+              {selectedStrategy.checklistItems.map((item: ChecklistItem) => (
+                <div key={item.id}>
+                  {item.type === "checkbox" ? (
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        name={`checklist.${item.id}`}
+                        checked={!!formData.checklist[item.id]}
+                        onChange={handleInputChange}
+                        className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
+                      />
+                      <span className="text-sm text-gray-300">
+                        {item.label}
+                        {item.required && <span className="text-red-400 ml-1">*</span>}
+                      </span>
+                    </label>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        {item.label}
+                        {item.required && <span className="text-red-400 ml-1">*</span>}
+                      </label>
+                      <input
+                        type="text"
+                        name={`checklist.${item.id}`}
+                        value={formData.checklist[item.id] as string || ""}
+                        onChange={handleInputChange}
+                        required={item.required}
+                        className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
+                        placeholder={item.label}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
 
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="checklist.ExitRuleFollowed"
-                checked={formData.checklist.ExitRuleFollowed}
-                onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
-              />
-              <span className="text-sm text-gray-300">
-                Exit rule matched initial plan or management rules
-              </span>
-            </label>
-          </div>
+              {/* Always show Confirmations field */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Confirmations (comma-separated) *
+                </label>
+                <input
+                  type="text"
+                  name="checklist.Confirmations"
+                  value={formData.checklist.Confirmations}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
+                  placeholder={selectedStrategy.confirmationsPlaceholder || "e.g., BoS, Liquidity Grab, OB Test, Reversal Candle, Trend Line Bounce"}
+                />
+              </div>
+            </div>
+          )}
 
           <div className={`mt-4 p-4 rounded-xl border-2 transition-all duration-300 ${
             formData.isAdherent 
@@ -716,12 +921,13 @@ export default function TradeForm({
 
         {/* Performance Tracking */}
         <div className="border-t border-gray-700/50 pt-6">
-          <h3 className="text-base font-semibold mb-4 text-gray-100">
+          <h3 className="text-lg md:text-base font-semibold mb-5 text-gray-100 flex items-center gap-2">
+            <ChartIcon />
             Trade Performance Tracking
           </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Max Favorable Excursion (₹)
               </label>
               <input
@@ -730,11 +936,11 @@ export default function TradeForm({
                 value={formData.maxFavorableExcursion ?? 0}
                 onChange={handleInputChange}
                 step="0.01"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Max Adverse Excursion (₹)
               </label>
               <input
@@ -743,11 +949,11 @@ export default function TradeForm({
                 value={formData.maxAdverseExcursion ?? 0}
                 onChange={handleInputChange}
                 step="0.01"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Peak Profit (₹)
               </label>
               <input
@@ -756,11 +962,11 @@ export default function TradeForm({
                 value={formData.peakProfit ?? 0}
                 onChange={handleInputChange}
                 step="0.01"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Time to Peak (minutes)
               </label>
               <input
@@ -769,7 +975,7 @@ export default function TradeForm({
                 value={formData.timeToPeakMinutes ?? 0}
                 onChange={handleInputChange}
                 step="1"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
             </div>
           </div>
@@ -777,140 +983,185 @@ export default function TradeForm({
 
         {/* Market Conditions */}
         <div className="border-t border-gray-700/50 pt-6">
-          <h3 className="text-base font-semibold mb-4 text-gray-100">
+          <h3 className="text-lg md:text-base font-semibold mb-5 text-gray-100 flex items-center gap-2">
+            <GlobeIcon />
             Market Conditions
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Volatility
               </label>
-              <select
-                name="volatility"
-                value={formData.volatility ?? "Medium"}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="volatility"
+                  value={formData.volatility ?? "Medium"}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 appearance-none cursor-pointer"
+                  style={{ fontSize: '16px' }}
+                >
+                  <option value="Low" style={{ fontSize: '16px', padding: '8px' }}>Low Volatility</option>
+                  <option value="Medium" style={{ fontSize: '16px', padding: '8px' }}>Medium Volatility</option>
+                  <option value="High" style={{ fontSize: '16px', padding: '8px' }}>High Volatility</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 1H Market Trend
               </label>
-              <select
-                name="trendH1"
-                value={formData.trendH1 ?? "Sideways"}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              >
-                <option value="Bullish">Bullish</option>
-                <option value="Bearish">Bearish</option>
-                <option value="Sideways">Sideways</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="trendH1"
+                  value={formData.trendH1 ?? "Sideways"}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 appearance-none cursor-pointer"
+                  style={{ fontSize: '16px' }}
+                >
+                  <option value="Bullish" style={{ fontSize: '16px', padding: '8px' }}>Bullish (Uptrend)</option>
+                  <option value="Bearish" style={{ fontSize: '16px', padding: '8px' }}>Bearish (Downtrend)</option>
+                  <option value="Sideways" style={{ fontSize: '16px', padding: '8px' }}>Sideways (Range)</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 15M Market Trend
               </label>
-              <select
-                name="trendM15"
-                value={formData.trendM15 ?? "Sideways"}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              >
-                <option value="Bullish">Bullish</option>
-                <option value="Bearish">Bearish</option>
-                <option value="Sideways">Sideways</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="trendM15"
+                  value={formData.trendM15 ?? "Sideways"}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 appearance-none cursor-pointer"
+                  style={{ fontSize: '16px' }}
+                >
+                  <option value="Bullish" style={{ fontSize: '16px', padding: '8px' }}>Bullish (Uptrend)</option>
+                  <option value="Bearish" style={{ fontSize: '16px', padding: '8px' }}>Bearish (Downtrend)</option>
+                  <option value="Sideways" style={{ fontSize: '16px', padding: '8px' }}>Sideways (Range)</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 5M Market Trend
               </label>
-              <select
-                name="trendM5"
-                value={formData.trendM5 ?? "Sideways"}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              >
-                <option value="Bullish">Bullish</option>
-                <option value="Bearish">Bearish</option>
-                <option value="Sideways">Sideways</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="trendM5"
+                  value={formData.trendM5 ?? "Sideways"}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 appearance-none cursor-pointer"
+                  style={{ fontSize: '16px' }}
+                >
+                  <option value="Bullish" style={{ fontSize: '16px', padding: '8px' }}>Bullish (Uptrend)</option>
+                  <option value="Bearish" style={{ fontSize: '16px', padding: '8px' }}>Bearish (Downtrend)</option>
+                  <option value="Sideways" style={{ fontSize: '16px', padding: '8px' }}>Sideways (Range)</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Volume Profile
               </label>
-              <select
-                name="volumeProfile"
-                value={formData.volumeProfile ?? "Normal"}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-              >
-                <option value="Low">Low</option>
-                <option value="Normal">Normal</option>
-                <option value="High">High</option>
-              </select>
+              <div className="relative">
+                <select
+                  name="volumeProfile"
+                  value={formData.volumeProfile ?? "Normal"}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 appearance-none cursor-pointer"
+                  style={{ fontSize: '16px' }}
+                >
+                  <option value="Low" style={{ fontSize: '16px', padding: '8px' }}>Low Volume</option>
+                  <option value="Normal" style={{ fontSize: '16px', padding: '8px' }}>Normal Volume</option>
+                  <option value="High" style={{ fontSize: '16px', padding: '8px' }}>High Volume</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Trade Quality & Psychology */}
         <div className="border-t border-gray-700/50 pt-6">
-          <h3 className="text-base font-semibold mb-4 text-gray-100">
+          <h3 className="text-lg md:text-base font-semibold mb-5 text-gray-100 flex items-center gap-2">
+            <BrainIcon />
             Trade Quality & Psychology
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Confidence Level (1-10)
               </label>
               <input
                 type="number"
                 name="confidenceLevel"
-                value={formData.confidenceLevel ?? 5}
+                value={formData.confidenceLevel === 5 || formData.confidenceLevel === 0 ? "" : (formData.confidenceLevel ?? "")}
                 onChange={handleInputChange}
+                onBlur={handleNumberBlur}
                 min={1}
                 max={10}
                 step={1}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-4 py-3 text-base md:text-sm bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-600 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500/50 transition-all hover:border-slate-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Setup Quality (1-10)
               </label>
               <input
                 type="number"
                 name="setupQuality"
-                value={formData.setupQuality ?? 5}
+                value={formData.setupQuality === 5 || formData.setupQuality === 0 ? "" : (formData.setupQuality ?? "")}
                 onChange={handleInputChange}
+                onBlur={handleNumberBlur}
                 min={1}
                 max={10}
                 step={1}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-4 py-3 text-base md:text-sm bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-600 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500/50 transition-all hover:border-slate-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Trade Number (today)
               </label>
               <input
                 type="number"
                 name="tradeNumber"
-                value={formData.tradeNumber ?? 1}
+                value={formData.tradeNumber === 1 || formData.tradeNumber === 0 ? "" : (formData.tradeNumber ?? "")}
                 onChange={handleInputChange}
+                onBlur={handleNumberBlur}
                 min={1}
                 step={1}
-                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                className="w-full px-4 py-3 text-base md:text-sm bg-gradient-to-br from-slate-800 to-slate-900 border-2 border-slate-600 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500/50 transition-all hover:border-slate-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Account Balance (₹)
               </label>
               <input
@@ -919,7 +1170,7 @@ export default function TradeForm({
                 value={formData.accountBalance ?? 0}
                 onChange={handleInputChange}
                 step="0.01"
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
               />
               <p className="mt-1 text-xs text-gray-500">
                 Enter your account balance <span className="font-semibold">before this trade</span>.
@@ -929,54 +1180,10 @@ export default function TradeForm({
           </div>
         </div>
 
-        {/* Strategy Refinement */}
-        <div className="border-t border-gray-700/50 pt-6">
-          <h3 className="text-base font-semibold mb-4 text-gray-100">
-            Strategy Refinement
-          </h3>
-          <div className="space-y-3">
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="partialExit"
-                checked={formData.partialExit ?? false}
-                onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
-              />
-              <span className="text-sm text-gray-300">
-                Took partial exits during the trade
-              </span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="trailingStopUsed"
-                checked={formData.trailingStopUsed ?? false}
-                onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
-              />
-              <span className="text-sm text-gray-300">
-                Used trailing stop management
-              </span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                name="breakevenMoved"
-                checked={formData.breakevenMoved ?? false}
-                onChange={handleInputChange}
-                className="mr-2 w-4 h-4 text-amber-400 border-slate-600 rounded focus:ring-amber-400"
-              />
-              <span className="text-sm text-gray-300">
-                Moved stop-loss to breakeven
-              </span>
-            </label>
-          </div>
-        </div>
-
         {/* Review & Learning */}
         <div className="border-t border-gray-700/50 pt-6">
-          <h3 className="text-base font-semibold mb-4 text-gray-100">
+          <h3 className="text-lg md:text-base font-semibold mb-5 text-gray-100 flex items-center gap-2">
+            <BookIcon />
             Review & Learning
           </h3>
           <div className="space-y-4">
@@ -993,7 +1200,7 @@ export default function TradeForm({
               </span>
             </label>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 What worked well?
               </label>
               <textarea
@@ -1001,25 +1208,54 @@ export default function TradeForm({
                 value={formData.whatWorked ?? ""}
                 onChange={handleInputChange}
                 rows={2}
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
                 placeholder="Entry timing, patience, following plan, etc."
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Mistakes / What went wrong?
               </label>
-              <textarea
-                name="mistakes"
-                value={formData.mistakes ?? ""}
-                onChange={handleInputChange}
-                rows={2}
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
-                placeholder="Emotional decisions, missed rules, management errors, etc."
-              />
+              <div className="relative">
+                <select
+                  name="mistakes"
+                  value={formData.mistakes ?? ""}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-3.5 pr-12 text-lg md:text-base bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600 appearance-none cursor-pointer"
+                  style={{ fontSize: '16px' }}
+                >
+                  <option value="" style={{ fontSize: '16px', padding: '8px' }}>Select a mistake (optional)</option>
+                  <option value="FOMO" style={{ fontSize: '16px', padding: '8px' }}>FOMO (Fear of Missing Out)</option>
+                  <option value="Early Entry" style={{ fontSize: '16px', padding: '8px' }}>Early Entry</option>
+                  <option value="Early Exit" style={{ fontSize: '16px', padding: '8px' }}>Early Exit</option>
+                  <option value="Revenge Trading" style={{ fontSize: '16px', padding: '8px' }}>Revenge Trading</option>
+                  <option value="Overtrading" style={{ fontSize: '16px', padding: '8px' }}>Overtrading</option>
+                  <option value="Not Following Plan" style={{ fontSize: '16px', padding: '8px' }}>Not Following Plan</option>
+                  <option value="Moving Stop Loss" style={{ fontSize: '16px', padding: '8px' }}>Moving Stop Loss</option>
+                  <option value="No Stop Loss" style={{ fontSize: '16px', padding: '8px' }}>No Stop Loss</option>
+                  <option value="Holding Too Long" style={{ fontSize: '16px', padding: '8px' }}>Holding Too Long</option>
+                  <option value="Cutting Winners Short" style={{ fontSize: '16px', padding: '8px' }}>Cutting Winners Short</option>
+                  <option value="Adding to Losing Position" style={{ fontSize: '16px', padding: '8px' }}>Adding to Losing Position</option>
+                  <option value="Trading on Emotions" style={{ fontSize: '16px', padding: '8px' }}>Trading on Emotions</option>
+                  <option value="Ignoring Risk Management" style={{ fontSize: '16px', padding: '8px' }}>Ignoring Risk Management</option>
+                  <option value="Chasing Price" style={{ fontSize: '16px', padding: '8px' }}>Chasing Price</option>
+                  <option value="Missing Entry" style={{ fontSize: '16px', padding: '8px' }}>Missing Entry</option>
+                  <option value="Lack of Patience" style={{ fontSize: '16px', padding: '8px' }}>Lack of Patience</option>
+                  <option value="Trading Without Confirmation" style={{ fontSize: '16px', padding: '8px' }}>Trading Without Confirmation</option>
+                  <option value="Overconfidence" style={{ fontSize: '16px', padding: '8px' }}>Overconfidence</option>
+                  <option value="Underconfidence" style={{ fontSize: '16px', padding: '8px' }}>Underconfidence</option>
+                  <option value="Distracted Trading" style={{ fontSize: '16px', padding: '8px' }}>Distracted Trading</option>
+                  <option value="Not Following Checklist" style={{ fontSize: '16px', padding: '8px' }}>Not Following Checklist</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Lessons learned
               </label>
               <textarea
@@ -1027,7 +1263,7 @@ export default function TradeForm({
                 value={formData.lessonsLearned ?? ""}
                 onChange={handleInputChange}
                 rows={3}
-                className="w-full px-3 py-2 bg-[#020617] border border-slate-700 rounded-md text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
                 placeholder="Concrete rules or insights you want to remember."
               />
             </div>
@@ -1051,7 +1287,7 @@ export default function TradeForm({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-amber-400 text-gray-900 py-3 px-6 rounded-xl hover:bg-amber-500 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed font-semibold transition-all duration-200 shadow-lg shadow-amber-400/40 hover:shadow-xl hover:shadow-amber-400/60 hover:-translate-y-0.5"
+            className="w-full bg-gradient-to-r from-amber-400 to-amber-500 text-gray-900 py-4 md:py-3 px-6 rounded-xl hover:from-amber-500 hover:to-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:bg-gray-600 disabled:cursor-not-allowed font-semibold text-base md:text-sm transition-all duration-200 shadow-lg shadow-amber-400/40 hover:shadow-xl hover:shadow-amber-400/60 active:scale-95"
           >
             {isSubmitting ? "Saving..." : "Save Trade"}
           </button>

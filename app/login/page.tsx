@@ -49,8 +49,8 @@ export default function LoginPage() {
       isUp: boolean; // For arrow direction
 
       constructor() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
+        this.x = Math.random() * (canvas?.width || window.innerWidth);
+        this.y = Math.random() * (canvas?.height || window.innerHeight);
         this.vx = (Math.random() - 0.5) * 0.3;
         this.vy = (Math.random() - 0.5) * 0.3;
         this.type = ['candle', 'arrow', 'trend', 'symbol'][Math.floor(Math.random() * 4)] as any;
@@ -71,6 +71,8 @@ export default function LoginPage() {
         // Generate data for candlesticks or trend lines
         if (this.type === 'candle' || this.type === 'trend') {
           this.data = Array.from({ length: 5 }, () => Math.random() * 20 - 10);
+        } else {
+          this.data = [];
         }
       }
 
@@ -90,10 +92,12 @@ export default function LoginPage() {
         }
 
         // Boundary wrapping
-        if (this.x < -50) this.x = canvas.width + 50;
-        if (this.x > canvas.width + 50) this.x = -50;
-        if (this.y < -50) this.y = canvas.height + 50;
-        if (this.y > canvas.height + 50) this.y = -50;
+        const canvasWidth = canvas?.width || window.innerWidth;
+        const canvasHeight = canvas?.height || window.innerHeight;
+        if (this.x < -50) this.x = canvasWidth + 50;
+        if (this.x > canvasWidth + 50) this.x = -50;
+        if (this.y < -50) this.y = canvasHeight + 50;
+        if (this.y > canvasHeight + 50) this.y = -50;
 
         // Damping
         this.vx *= 0.99;
@@ -225,7 +229,7 @@ export default function LoginPage() {
     const animate = () => {
       if (!ctx) return;
       ctx.fillStyle = "rgba(17, 24, 39, 0.1)";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, canvas?.width || window.innerWidth, canvas?.height || window.innerHeight);
 
       tradingElements.forEach((element) => {
         element.update();

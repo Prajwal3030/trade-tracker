@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, query, where, getDocs, deleteDoc } from "firebase/firestore";
 import { db, auth } from "./firebase";
 import { signInWithEmailAndPassword, linkWithCredential, EmailAuthProvider, updatePassword } from "firebase/auth";
 import type { User } from "firebase/auth";
@@ -214,7 +214,7 @@ export const deleteAllUserCredentials = async (): Promise<number> => {
     const deletePromises: Promise<void>[] = [];
     
     querySnapshot.forEach((doc) => {
-      deletePromises.push(doc.ref.delete());
+      deletePromises.push(deleteDoc(doc.ref));
     });
     
     await Promise.all(deletePromises);

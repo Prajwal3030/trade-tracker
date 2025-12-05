@@ -12,6 +12,7 @@ const links = [
   { href: "/log", label: "Log New Trade", key: "log" },
   { href: "/journal", label: "Trade Journal", key: "journal" },
   { href: "/analytics", label: "Analytics & Insights", key: "analytics" },
+  { href: "/strategies", label: "Setup / Strategy", key: "strategies" },
 ];
 
 function NavIcon({ routeKey, active }: { routeKey: string; active: boolean }) {
@@ -76,6 +77,28 @@ function NavIcon({ routeKey, active }: { routeKey: string; active: boolean }) {
             fill={active ? "#22c55e" : "#4ade80"}
             opacity="0.6"
           />
+        </svg>
+      </span>
+    );
+  }
+
+  if (routeKey === "strategies") {
+    // Strategy/Setup icon
+    return (
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-purple-500/10">
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          aria-hidden="true"
+          fill="none"
+          stroke={active ? "#a855f7" : "#c084fc"}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 2L2 7l10 5 10-5-10-5z" />
+          <path d="M2 17l10 5 10-5" />
+          <path d="M2 12l10 5 10-5" />
         </svg>
       </span>
     );
@@ -154,6 +177,18 @@ export default function Sidebar() {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMobileMenuOpen]);
 
   const handleLogout = async () => {
     try {
@@ -311,42 +346,78 @@ export default function Sidebar() {
     </div>
   );
 
+  // Get current page label
+  const getCurrentPageLabel = () => {
+    const currentLink = links.find(link => link.href === pathname);
+    return currentLink ? currentLink.label : "Tracer";
+  };
+
   return (
     <>
-      {/* Mobile Hamburger Button */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="mobile-menu-button fixed top-4 left-4 z-50 md:hidden bg-[#1f2937] border border-gray-700/80 rounded-lg p-2 text-gray-300 hover:text-white hover:bg-[#111827] transition-colors shadow-lg"
-        aria-label="Toggle menu"
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          {isMobileMenuOpen ? (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          ) : (
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
+      {/* Mobile Top Bar */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#1f2937] via-[#111827] to-[#1f2937] border-b border-gray-700/80 backdrop-blur-md shadow-lg safe-area-top">
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* Logo and Page Title */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="mobile-menu-button flex-shrink-0 relative group"
+              aria-label="Toggle menu"
+            >
+              <div className="relative w-10 h-10 flex items-center justify-center">
+                <div className={`absolute inset-0 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 transition-all duration-300 ${
+                  isMobileMenuOpen ? "opacity-100 scale-100" : "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100"
+                }`}></div>
+                <div className="relative w-6 h-5 flex flex-col justify-between">
+                  <span className={`block h-0.5 w-full bg-amber-400 rounded-full transition-all duration-300 origin-center ${
+                    isMobileMenuOpen ? "rotate-45 translate-y-2" : ""
+                  }`}></span>
+                  <span className={`block h-0.5 w-full bg-amber-400 rounded-full transition-all duration-300 ${
+                    isMobileMenuOpen ? "opacity-0" : ""
+                  }`}></span>
+                  <span className={`block h-0.5 w-full bg-amber-400 rounded-full transition-all duration-300 origin-center ${
+                    isMobileMenuOpen ? "-rotate-45 -translate-y-2" : ""
+                  }`}></span>
+                </div>
+              </div>
+            </button>
+            
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <div className="relative flex-shrink-0">
+                <Image
+                  src="/logo.png"
+                  alt="Tracer Logo"
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 object-contain"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-sm font-bold bg-gradient-to-r from-slate-100 via-amber-200 to-amber-300 bg-clip-text text-transparent leading-none truncate">
+                  {getCurrentPageLabel()}
+                </h1>
+              </div>
+            </div>
+          </div>
+
+          {/* User Avatar (optional) */}
+          {user && (
+            <div className="flex-shrink-0 ml-2">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-900 font-bold text-sm shadow-lg ring-2 ring-amber-400/30">
+                {getUserInitial()}
+              </div>
+            </div>
           )}
-        </svg>
-      </button>
+        </div>
+        
+        {/* Active Indicator */}
+        <div className="h-0.5 bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"></div>
+      </header>
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/60 z-40 md:hidden"
+          className="fixed inset-0 bg-black/60 z-[42] md:hidden backdrop-blur-sm"
           onClick={() => setIsMobileMenuOpen(false)}
         />
       )}
@@ -358,7 +429,7 @@ export default function Sidebar() {
 
       {/* Mobile Sidebar */}
       <aside
-        className={`mobile-menu-container fixed left-0 top-0 h-full w-64 bg-[#1f2937] border-r border-gray-700/80 z-50 md:hidden shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`mobile-menu-container fixed left-0 top-[64px] bottom-0 w-64 bg-[#1f2937] border-r border-gray-700/80 z-[45] md:hidden shadow-2xl transition-transform duration-300 ease-in-out ${
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >

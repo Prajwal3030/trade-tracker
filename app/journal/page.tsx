@@ -67,7 +67,7 @@ export default function JournalPage() {
 
   return (
     <div className="min-h-screen bg-[#111827]">
-      <div className="container mx-auto px-4 md:px-6 py-4 md:py-6 max-w-7xl">
+      <div className="mx-auto px-4 md:px-6 py-4 md:py-6 max-w-7xl">
         <TradeFilters filters={filters} onFilterChange={setFilters} />
 
         {isLoading ? (
@@ -84,36 +84,34 @@ export default function JournalPage() {
 
         {editingTrade && (
           <div
-            className="fixed inset-0 z-40 flex items-center justify-center bg-black/60 p-4"
+            className="fixed inset-0 z-50 flex items-start md:items-center justify-center bg-black/60 p-0 md:p-4 overflow-y-auto"
             onClick={() => setEditingTrade(null)}
           >
             <div
-              className="w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+              className="w-full md:w-full max-w-4xl md:max-h-[90vh] md:overflow-y-auto bg-[#1f2937] md:rounded-lg shadow-xl border-0 md:border border-gray-700 min-h-screen md:min-h-0"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="bg-[#1f2937] rounded-lg shadow-xl border border-gray-700">
-                <div className="flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-700">
-                  <h2 className="text-base md:text-lg font-semibold text-gray-100 truncate pr-2">
-                    Edit Trade – {editingTrade.asset} ({editingTrade.strategyId})
-                  </h2>
-                  <button
-                    type="button"
-                    onClick={() => setEditingTrade(null)}
-                    className="text-sm text-gray-400 hover:text-gray-200 flex-shrink-0"
-                  >
-                    Close
-                  </button>
-                </div>
-                <div className="p-4 md:p-6">
-                  <TradeForm
-                    mode="edit"
-                    tradeToEdit={editingTrade}
-                    onTradeSaved={() => {
-                      setEditingTrade(null);
-                      loadTrades();
-                    }}
-                  />
-                </div>
+              <div className="sticky top-0 bg-[#1f2937] z-10 flex items-center justify-between px-4 md:px-6 py-3 border-b border-gray-700">
+                <h2 className="text-base md:text-lg font-semibold text-gray-100 truncate pr-2">
+                  Edit Trade – {editingTrade.asset} ({editingTrade.strategyId})
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setEditingTrade(null)}
+                  className="text-sm text-gray-400 hover:text-gray-200 flex-shrink-0 px-2 py-1"
+                >
+                  Close
+                </button>
+              </div>
+              <div className="p-3 md:p-6">
+                <TradeForm
+                  mode="edit"
+                  tradeToEdit={editingTrade}
+                  onTradeSaved={() => {
+                    setEditingTrade(null);
+                    loadTrades();
+                  }}
+                />
               </div>
             </div>
           </div>

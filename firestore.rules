@@ -39,6 +39,30 @@ service cloud.firestore {
       // The client should only use username and email from the result
       allow list: if true; // Allow queries for login purposes
     }
+
+    // Strategies collection - users can only read/write their own strategies
+    match /strategies/{strategyId} {
+      // Allow reading individual documents if user owns them
+      allow get: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid);
+      
+      // Allow listing/querying strategies - Firestore will filter by where clause
+      // The where("userId", "==", userId) in the query ensures users only see their own
+      allow list: if request.auth != null;
+      
+      // Allow creating strategies if user sets their own userId
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow updating strategies if user owns them
+      allow update: if request.auth != null && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow deleting strategies if user owns them
+      allow delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
   }
 }
 

@@ -1,16 +1,35 @@
+export interface ChecklistItem {
+  id: string;
+  label: string;
+  type: "checkbox" | "text";
+  required?: boolean;
+}
+
 export interface Checklist {
   H1_TrendAligned: boolean;
   M15_TrendAligned: boolean;
   M05_StructureMet: boolean;
   Confirmations: string;
   ExitRuleFollowed: boolean;
+  // Allow additional dynamic checklist items
+  [key: string]: boolean | string;
+}
+
+export interface Strategy {
+  id?: string;
+  userId: string;
+  name: string;
+  checklistItems: ChecklistItem[];
+  confirmationsPlaceholder?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 export interface Trade {
   id?: string;
   userId: string;
   asset: string;
-  strategyId: "Setup 1" | "Setup 2";
+  strategyId: string; // Now supports dynamic strategies
   direction: "Long" | "Short";
   entryTime: Date | string;
   exitTime: Date | string;
@@ -72,7 +91,7 @@ export interface Trade {
 }
 
 export interface TradeFilters {
-  strategyId?: "Setup 1" | "Setup 2" | "";
+  strategyId?: string | "";
   direction?: "Long" | "Short" | "";
   isAdherent?: boolean | "";
   startDate?: string;
