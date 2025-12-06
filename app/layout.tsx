@@ -28,11 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-x-hidden`}
         suppressHydrationWarning
       >
         <AuthProvider>
-          <div className="flex min-h-screen" suppressHydrationWarning>
+          <div className="flex min-h-screen w-full overflow-x-hidden" suppressHydrationWarning>
             <ConditionalSidebar />
             <ConditionalMain>
               {children}

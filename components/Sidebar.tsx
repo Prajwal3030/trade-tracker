@@ -226,31 +226,8 @@ export default function Sidebar() {
 
   const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => (
     <div className="flex flex-col h-full">
-        {/* Logo/Title */}
-        <div className="p-5 border-b border-gray-700 bg-[#1f2937]">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-shrink-0">
-              <Image
-                src="/logo.png"
-                alt="Tracer Logo"
-                width={96}
-                height={96}
-                className="w-24 h-24 object-contain"
-              />
-            </div>
-            <div className="flex flex-col justify-center min-w-0">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-slate-100 via-amber-200 to-amber-300 bg-clip-text text-transparent leading-none">
-                Tracer
-              </h1>
-              <p className="text-xs text-slate-400 leading-tight mt-0.5">
-                Trade strategy journal & analytics
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Navigation Links */}
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 pt-6">
           <ul className="space-y-2">
             {links.map((link, index) => {
               const active = pathname === link.href;
@@ -399,15 +376,6 @@ export default function Sidebar() {
               </div>
             </div>
           </div>
-
-          {/* User Avatar (optional) */}
-          {user && (
-            <div className="flex-shrink-0 ml-2">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-900 font-bold text-sm shadow-lg ring-2 ring-amber-400/30">
-                {getUserInitial()}
-              </div>
-            </div>
-          )}
         </div>
         
         {/* Active Indicator */}

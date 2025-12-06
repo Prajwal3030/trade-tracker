@@ -66,8 +66,8 @@ export default function JournalPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#111827]">
-      <div className="mx-auto px-4 md:px-6 py-4 md:py-6 max-w-7xl">
+    <div className="min-h-screen bg-[#111827] w-full max-w-full overflow-x-hidden">
+      <div className="mx-auto px-4 md:px-6 py-4 md:py-6 w-full max-w-full">
         <TradeFilters filters={filters} onFilterChange={setFilters} />
 
         {isLoading ? (
@@ -75,11 +75,13 @@ export default function JournalPage() {
             Loading trades...
           </div>
         ) : (
-          <TradeTable
-            trades={trades}
-            onEdit={(trade) => setEditingTrade(trade)}
-            onDelete={handleDelete}
-          />
+          <div className="w-full max-w-full overflow-x-auto">
+            <TradeTable
+              trades={trades}
+              onEdit={(trade) => setEditingTrade(trade)}
+              onDelete={handleDelete}
+            />
+          </div>
         )}
 
         {editingTrade && (

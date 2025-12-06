@@ -10,13 +10,15 @@ interface TradeTableProps {
 
 export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps) {
   const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleString("en-IN", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    const d = new Date(date);
+    const day = d.getDate();
+    const month = d.toLocaleString("en-IN", { month: "short" });
+    const hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? "pm" : "am";
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes.toString().padStart(2, "0");
+    return `${day} ${month}, ${displayHours}:${displayMinutes} ${ampm}`;
   };
 
   const formatCurrency = (value: number) => {
@@ -41,7 +43,7 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
   }
 
   return (
-    <div className="bg-[#1f2937] rounded-xl md:rounded-2xl shadow-2xl overflow-hidden border border-gray-700/80">
+    <div className="bg-[#1f2937] rounded-xl md:rounded-2xl shadow-2xl overflow-hidden border border-gray-700/80 w-full">
       {/* Mobile Card View */}
       <div className="md:hidden divide-y divide-gray-700">
         {trades.map((trade) => (
@@ -140,46 +142,45 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto -mx-4 md:mx-0">
-        <div className="inline-block min-w-full align-middle px-4 md:px-0">
-          <table className="min-w-full divide-y divide-gray-700">
-          <thead className="bg-[#020617]">
+      <div className="hidden md:block overflow-x-auto w-full" style={{ maxWidth: '100%', overflowX: 'auto' }}>
+        <table className="divide-y divide-gray-700" style={{ width: 'max-content' }}>
+          <thead className="bg-[#020617] sticky top-0 z-10">
             <tr>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
                 Date
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
                 Asset
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
                 Strategy
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
-                Direction
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                Dir
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
-                Entry Price
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                Entry
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
-                Exit Price
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                Exit
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
                 Size
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
                 P&L
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
                 R:R
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
                 Exit Reason
               </th>
-              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
-                Adherent
+              <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                Adh
               </th>
               {(onEdit || onDelete) && (
-                <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
                   Actions
                 </th>
               )}
@@ -191,18 +192,18 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
                 key={trade.id}
                 className="hover:bg-[#111827] transition-colors"
               >
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-200">
+                <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-200">
                   {formatDate(trade.entryTime)}
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-medium text-gray-100">
+                <td className="px-2 py-2 whitespace-nowrap text-xs font-medium text-gray-100">
                   {trade.asset}
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-400">
+                <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-400 max-w-[100px] truncate" title={trade.strategyId}>
                   {trade.strategyId}
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
+                <td className="px-2 py-2 whitespace-nowrap">
                   <span
-                    className={`px-1.5 md:px-2 py-0.5 md:py-1 text-xs font-semibold rounded-full ${
+                    className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${
                       trade.direction === "Long"
                         ? "bg-green-500/20 text-green-400 border border-green-500/30"
                         : "bg-red-500/20 text-red-400 border border-red-500/30"
@@ -211,17 +212,17 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
                     {trade.direction}
                   </span>
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-200">
+                <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-200">
                   ₹{trade.optionEntryPrice.toFixed(2)}
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-200">
+                <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-200">
                   ₹{trade.optionExitPrice.toFixed(2)}
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-200">
+                <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-200">
                   {trade.positionSize}
                 </td>
                 <td
-                  className={`px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm font-semibold ${
+                  className={`px-2 py-2 whitespace-nowrap text-xs font-semibold ${
                     trade.realizedPnL >= 0
                       ? "text-green-400"
                       : "text-red-400"
@@ -229,15 +230,15 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
                 >
                   {formatCurrency(trade.realizedPnL)}
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-200">
+                <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-200">
                   {trade.realizedRR.toFixed(2)}
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm text-gray-400">
+                <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-400 max-w-[80px] truncate" title={trade.exitReason}>
                   {trade.exitReason}
                 </td>
-                <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
+                <td className="px-2 py-2 whitespace-nowrap">
                   <span
-                    className={`px-1.5 md:px-2 py-0.5 md:py-1 text-xs font-semibold rounded-full ${
+                    className={`px-1.5 py-0.5 text-[10px] font-semibold rounded-full ${
                       trade.isAdherent
                         ? "bg-green-500/20 text-green-400 border border-green-500/30"
                         : "bg-red-500/20 text-red-400 border border-red-500/30"
@@ -247,13 +248,13 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
                   </span>
                 </td>
                 {(onEdit || onDelete) && (
-                  <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-xs md:text-sm">
-                    <div className="flex items-center gap-1 md:gap-2">
+                  <td className="px-2 py-2 whitespace-nowrap text-xs">
+                    <div className="flex items-center gap-1">
                       {onEdit && (
                         <button
                           type="button"
                           onClick={() => onEdit(trade)}
-                          className="inline-flex items-center px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs font-medium bg-amber-400 text-gray-900 hover:bg-amber-500 transition-colors"
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-400 text-gray-900 hover:bg-amber-500 transition-colors"
                         >
                           Edit
                         </button>
@@ -262,7 +263,7 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
                         <button
                           type="button"
                           onClick={() => onDelete(trade)}
-                          className="inline-flex items-center px-2 md:px-3 py-0.5 md:py-1 rounded-full text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                          className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
                         >
                           Delete
                         </button>
@@ -274,7 +275,6 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
             ))}
           </tbody>
         </table>
-        </div>
       </div>
     </div>
   );
