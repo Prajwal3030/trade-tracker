@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import TradeFilters from "@/components/TradeFilters";
 import { getTrades } from "@/lib/trades";
-import { Trade, TradeFilters as TradeFiltersType } from "@/types/trade";
+import { Trade, TradeFilters as TradeFiltersType, FundAccount } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
 import { getFundAccounts } from "@/lib/fundAccounts";
 
