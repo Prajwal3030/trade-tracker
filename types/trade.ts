@@ -72,6 +72,7 @@ export interface Trade {
   winStreak?: number;
   lossStreak?: number;
   accountBalance?: number;
+  fundAccountId?: string; // Reference to fund account used for this trade
 
   // --- Strategy refinement ---
   partialExit?: boolean;
@@ -96,6 +97,7 @@ export interface TradeFilters {
   isAdherent?: boolean | "";
   startDate?: string;
   endDate?: string;
+  fundAccountId?: string | "";
 }
 
 export interface TradeMetrics {
@@ -105,5 +107,15 @@ export interface TradeMetrics {
   averageRR: number;
   expectancy: number;
   adherenceRate: number;
+}
+
+export interface FundAccount {
+  id?: string;
+  userId: string;
+  name: string;
+  balance: number;
+  initialBalance: number;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 

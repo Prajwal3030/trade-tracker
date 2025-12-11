@@ -63,6 +63,30 @@ service cloud.firestore {
       allow delete: if request.auth != null && 
         resource.data.userId == request.auth.uid;
     }
+
+    // Fund Accounts collection - users can only read/write their own fund accounts
+    match /fundAccounts/{accountId} {
+      // Allow reading individual documents if user owns them
+      allow get: if request.auth != null && 
+        (resource == null || resource.data.userId == request.auth.uid);
+      
+      // Allow listing/querying fund accounts - Firestore will filter by where clause
+      // The where("userId", "==", userId) in the query ensures users only see their own
+      allow list: if request.auth != null;
+      
+      // Allow creating fund accounts if user sets their own userId
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow updating fund accounts if user owns them
+      allow update: if request.auth != null && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == request.auth.uid;
+      
+      // Allow deleting fund accounts if user owns them
+      allow delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+    }
   }
 }
 

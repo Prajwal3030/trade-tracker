@@ -73,7 +73,14 @@ export default function PnLChart({ trades }: PnLChartProps) {
                 currency: "INR",
                 maximumFractionDigits: 0,
               }).format(value);
-              return [formatted, name === "pnl" ? "P&L per Trade" : "Cumulative P&L"];
+              // Match the dataKey names from the Line components
+              if (name === "pnl" || name === "P&L per Trade") {
+                return [formatted, "P&L per Trade"];
+              }
+              if (name === "cumulative" || name === "Cumulative P&L") {
+                return [formatted, "Cumulative P&L"];
+              }
+              return [formatted, name];
             }}
             labelFormatter={(label) => `Trade: ${label}`}
           />

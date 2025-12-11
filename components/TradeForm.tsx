@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react";
 import { saveTrade, updateTrade } from "@/lib/trades";
 import { getStrategies, getStrategyById } from "@/lib/strategies";
-import { Trade, Checklist, Strategy, ChecklistItem } from "@/types/trade";
+import { getFundAccounts, updateFundAccountBalance, getFundAccountById } from "@/lib/fundAccounts";
+import { Trade, Checklist, Strategy, ChecklistItem, FundAccount } from "@/types/trade";
 import { useAuth } from "@/components/AuthProvider";
-import { MoneyIcon, ChecklistIcon, ChartIcon, GlobeIcon, BrainIcon, BookIcon, EditIcon, DocumentIcon } from "@/components/Icons";
+import { MoneyIcon, ChecklistIcon, GlobeIcon, BrainIcon, BookIcon, EditIcon, DocumentIcon } from "@/components/Icons";
 
 interface TradeFormProps {
   onTradeSaved?: () => void;
@@ -79,6 +80,9 @@ export default function TradeForm({
   const [strategies, setStrategies] = useState<Strategy[]>([]);
   const [selectedStrategy, setSelectedStrategy] = useState<Strategy | null>(null);
   const [isLoadingStrategies, setIsLoadingStrategies] = useState(true);
+  const [fundAccounts, setFundAccounts] = useState<FundAccount[]>([]);
+  const [selectedFundAccountId, setSelectedFundAccountId] = useState<string>("");
+  const [isLoadingFundAccounts, setIsLoadingFundAccounts] = useState(true);
 
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
@@ -97,6 +101,9 @@ export default function TradeForm({
             ? rest.exitTime.toISOString().slice(0, 16)
             : rest.exitTime,
       } as Omit<Trade, "id">);
+      if (rest.fundAccountId) {
+        setSelectedFundAccountId(rest.fundAccountId);
+      }
       setInitialLoadComplete(true);
     }
   }, [mode, tradeToEdit, initialLoadComplete]);
@@ -117,21 +124,12 @@ export default function TradeForm({
     const expectedRR =
       riskPerUnit > 0 ? Math.abs(rewardPerUnit) / riskPerUnit : 0;
 
-    // Peak profit should only be calculated if MFE is greater than entry price
-    // Otherwise, it should be 0 (no peak profit) or use manual entry
-    const maxFavorableExcursion = formData.maxFavorableExcursion ?? 0;
-    const peakPerUnit = maxFavorableExcursion > formData.optionEntryPrice
-      ? maxFavorableExcursion - formData.optionEntryPrice
-      : 0;
-    const peakProfit = peakPerUnit * formData.positionSize;
-
     setFormData((prev) => ({
       ...prev,
       realizedPnL: Number(pnl.toFixed(2)),
       realizedRR: Number(rr.toFixed(2)),
       initialRisk: Number(initialRisk.toFixed(2)),
       expectedRR: Number(expectedRR.toFixed(2)),
-      peakProfit: Number(peakProfit.toFixed(2)),
     }));
   }, [
     formData.optionEntryPrice,
@@ -139,19 +137,21 @@ export default function TradeForm({
     formData.positionSize,
     formData.stopLossPrice,
     formData.initialReward,
-    formData.maxFavorableExcursion,
   ]);
 
   // Auto-calculate risk metrics (risk %, position %, max drawdown) from inputs
+  // Note: These are preview values based on current balance. The actual values will be
+  // recalculated in saveTrade/updateTrade based on the account balance at entry time.
   useEffect(() => {
-    const accountBalance = formData.accountBalance ?? 0;
+    const selectedAccount = fundAccounts.find(acc => acc.id === selectedFundAccountId);
+    const currentAccountBalance = selectedAccount?.balance ?? 0;
     let riskPercent = 0;
     let positionSizePercent = 0;
 
-    if (accountBalance > 0) {
-      riskPercent = (formData.initialRisk / accountBalance) * 100;
+    if (currentAccountBalance > 0) {
+      riskPercent = (formData.initialRisk / currentAccountBalance) * 100;
       const exposure = formData.positionSize * formData.optionEntryPrice;
-      positionSizePercent = (exposure / accountBalance) * 100;
+      positionSizePercent = (exposure / currentAccountBalance) * 100;
     }
 
     const maxDrawdown = Math.abs(formData.maxAdverseExcursion ?? 0);
@@ -161,12 +161,15 @@ export default function TradeForm({
       riskPercent: Number(riskPercent.toFixed(2)),
       positionSizePercent: Number(positionSizePercent.toFixed(2)),
       maxDrawdown: Number(maxDrawdown.toFixed(2)),
+      // Don't set accountBalance here - it will be calculated in saveTrade/updateTrade
+      // based on the balance at entry time
     }));
   }, [
     formData.initialRisk,
     formData.positionSize,
     formData.optionEntryPrice,
-    formData.accountBalance,
+    selectedFundAccountId,
+    fundAccounts,
     formData.maxAdverseExcursion,
   ]);
 
@@ -206,6 +209,34 @@ export default function TradeForm({
     };
     loadStrategies();
   }, [user]);
+
+  // Load fund accounts when user is available
+  useEffect(() => {
+    const loadFundAccounts = async () => {
+      if (!user) return;
+      try {
+        setIsLoadingFundAccounts(true);
+        const accounts = await getFundAccounts(user.uid);
+        setFundAccounts(accounts);
+        
+        // Set first account as default if in create mode
+        if (mode === "create" && accounts.length > 0 && !selectedFundAccountId) {
+          setSelectedFundAccountId(accounts[0].id!);
+          setFormData(prev => ({ ...prev, fundAccountId: accounts[0].id }));
+        }
+        
+        // In edit mode, set the fund account from tradeToEdit
+        if (mode === "edit" && tradeToEdit?.fundAccountId) {
+          setSelectedFundAccountId(tradeToEdit.fundAccountId);
+        }
+      } catch (error) {
+        console.error("Error loading fund accounts:", error);
+      } finally {
+        setIsLoadingFundAccounts(false);
+      }
+    };
+    loadFundAccounts();
+  }, [user, mode, tradeToEdit]);
 
   // Load strategy details when strategyId changes
   useEffect(() => {
@@ -377,20 +408,46 @@ export default function TradeForm({
         throw new Error("You must be logged in to save trades.");
       }
 
+      if (!selectedFundAccountId) {
+        throw new Error("Please select a fund account.");
+      }
+
+      const tradeData = {
+        ...formData,
+        userId: user.uid,
+        fundAccountId: selectedFundAccountId,
+        entryTime: new Date(formData.entryTime),
+        exitTime: new Date(formData.exitTime),
+      };
+
       if (mode === "edit" && tradeToEdit?.id) {
-        await updateTrade(tradeToEdit.id, {
-          ...formData,
-          userId: user.uid,
-          entryTime: new Date(formData.entryTime),
-          exitTime: new Date(formData.exitTime),
-        });
+        // Handle fund account balance update for edits
+        const oldPnL = tradeToEdit.realizedPnL ?? 0;
+        const newPnL = formData.realizedPnL;
+        const oldFundAccountId = tradeToEdit.fundAccountId;
+        
+        // If fund account changed, reverse old P&L from old account and apply new P&L to new account
+        if (oldFundAccountId && oldFundAccountId !== selectedFundAccountId) {
+          // Reverse old P&L from old account
+          await updateFundAccountBalance(oldFundAccountId, -oldPnL);
+          // Apply new P&L to new account
+          await updateFundAccountBalance(selectedFundAccountId, newPnL);
+        } else if (oldFundAccountId === selectedFundAccountId) {
+          // Same account, just update the difference
+          const pnlDifference = newPnL - oldPnL;
+          if (pnlDifference !== 0) {
+            await updateFundAccountBalance(selectedFundAccountId, pnlDifference);
+          }
+        } else {
+          // New account selected (old trade had no account)
+          await updateFundAccountBalance(selectedFundAccountId, newPnL);
+        }
+
+        await updateTrade(tradeToEdit.id, tradeData);
       } else {
-        await saveTrade({
-          ...formData,
-          userId: user.uid,
-          entryTime: new Date(formData.entryTime),
-          exitTime: new Date(formData.exitTime),
-        });
+        // New trade - update fund account balance
+        await updateFundAccountBalance(selectedFundAccountId, formData.realizedPnL);
+        await saveTrade(tradeData);
       }
 
       setSubmitMessage({
@@ -405,6 +462,19 @@ export default function TradeForm({
 
       // Reset form only in create mode
       if (mode === "create") {
+        // Reload fund accounts to get updated balances
+        if (fundAccounts.length > 0) {
+          const updatedAccounts = await getFundAccounts(user.uid);
+          setFundAccounts(updatedAccounts);
+          // Keep the same selected account or use first one
+          const currentAccount = updatedAccounts.find(acc => acc.id === selectedFundAccountId);
+          if (currentAccount) {
+            setSelectedFundAccountId(currentAccount.id!);
+          } else if (updatedAccounts.length > 0) {
+            setSelectedFundAccountId(updatedAccounts[0].id!);
+          }
+        }
+        
         setFormData({
           userId: user.uid,
           asset: "",
@@ -446,6 +516,7 @@ export default function TradeForm({
           winStreak: 0,
           lossStreak: 0,
           accountBalance: 0,
+          fundAccountId: selectedFundAccountId,
           lessonsLearned: "",
           wouldTradeAgain: true,
           mistakes: "",
@@ -919,68 +990,6 @@ export default function TradeForm({
           </div>
         </div>
 
-        {/* Performance Tracking */}
-        <div className="border-t border-gray-700/50 pt-6">
-          <h3 className="text-lg md:text-base font-semibold mb-5 text-gray-100 flex items-center gap-2">
-            <ChartIcon />
-            Trade Performance Tracking
-          </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Max Favorable Excursion (₹)
-              </label>
-              <input
-                type="number"
-                name="maxFavorableExcursion"
-                value={formData.maxFavorableExcursion ?? 0}
-                onChange={handleInputChange}
-                step="0.01"
-                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Max Adverse Excursion (₹)
-              </label>
-              <input
-                type="number"
-                name="maxAdverseExcursion"
-                value={formData.maxAdverseExcursion ?? 0}
-                onChange={handleInputChange}
-                step="0.01"
-                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Peak Profit (₹)
-              </label>
-              <input
-                type="number"
-                name="peakProfit"
-                value={formData.peakProfit ?? 0}
-                onChange={handleInputChange}
-                step="0.01"
-                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Time to Peak (minutes)
-              </label>
-              <input
-                type="number"
-                name="timeToPeakMinutes"
-                value={formData.timeToPeakMinutes ?? 0}
-                onChange={handleInputChange}
-                step="1"
-                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
-              />
-            </div>
-          </div>
-        </div>
-
         {/* Market Conditions */}
         <div className="border-t border-gray-700/50 pt-6">
           <h3 className="text-lg md:text-base font-semibold mb-5 text-gray-100 flex items-center gap-2">
@@ -1162,20 +1171,48 @@ export default function TradeForm({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Account Balance (₹)
+                Fund Account *
               </label>
-              <input
-                type="number"
-                name="accountBalance"
-                value={formData.accountBalance ?? 0}
-                onChange={handleInputChange}
-                step="0.01"
-                className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Enter your account balance <span className="font-semibold">before this trade</span>.
-                Used only to auto-calculate risk % and position size % in Analytics.
-              </p>
+              {isLoadingFundAccounts ? (
+                <div className="w-full px-4 py-3 bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-400">
+                  Loading accounts...
+                </div>
+              ) : fundAccounts.length === 0 ? (
+                <div className="w-full px-4 py-3 bg-[#020617] border-2 border-red-500/50 rounded-lg">
+                  <p className="text-red-400 text-sm mb-2">No fund accounts found.</p>
+                  <a
+                    href="/fund-accounts"
+                    className="text-amber-400 hover:text-amber-300 text-sm underline"
+                  >
+                    Create a fund account first
+                  </a>
+                </div>
+              ) : (
+                <>
+                  <select
+                    name="fundAccountId"
+                    value={selectedFundAccountId}
+                    onChange={(e) => {
+                      setSelectedFundAccountId(e.target.value);
+                      setFormData(prev => ({ ...prev, fundAccountId: e.target.value }));
+                    }}
+                    className="w-full px-4 py-3 text-base md:text-sm bg-[#020617] border-2 border-slate-700 rounded-lg text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400/50 transition-all hover:border-slate-600"
+                  >
+                    {fundAccounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        {account.name} - {new Intl.NumberFormat("en-IN", {
+                          style: "currency",
+                          currency: "INR",
+                          maximumFractionDigits: 0,
+                        }).format(account.balance)}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select the fund account for this trade. Balance will be updated automatically.
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -1232,6 +1269,7 @@ export default function TradeForm({
                   <option value="Overtrading" style={{ fontSize: '16px', padding: '8px' }}>Overtrading</option>
                   <option value="Not Following Plan" style={{ fontSize: '16px', padding: '8px' }}>Not Following Plan</option>
                   <option value="Moving Stop Loss" style={{ fontSize: '16px', padding: '8px' }}>Moving Stop Loss</option>
+                  <option value="Small Stop Loss" style={{ fontSize: '16px', padding: '8px' }}>Small Stop Loss</option>
                   <option value="No Stop Loss" style={{ fontSize: '16px', padding: '8px' }}>No Stop Loss</option>
                   <option value="Holding Too Long" style={{ fontSize: '16px', padding: '8px' }}>Holding Too Long</option>
                   <option value="Cutting Winners Short" style={{ fontSize: '16px', padding: '8px' }}>Cutting Winners Short</option>

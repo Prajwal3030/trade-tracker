@@ -41,6 +41,68 @@ export const saveTrade = async (trade: Omit<Trade, "id">): Promise<string> => {
     const entryHour = entry.getHours();
     const dayOfWeek = entry.getDay();
 
+    // Calculate account balance at the time of trade entry
+    let accountBalanceAtEntry = trade.accountBalance ?? 0;
+    if (trade.fundAccountId) {
+      try {
+        const { getFundAccountById } = await import("./fundAccounts");
+        const account = await getFundAccountById(trade.fundAccountId);
+        if (account) {
+          // Get all trades for this fund account
+          // Note: We fetch all and filter in memory to avoid index requirements
+          const allTradesSnapshot = await getDocs(
+            query(
+              collection(ensureDb(), "trades"),
+              where("userId", "==", trade.userId),
+              where("fundAccountId", "==", trade.fundAccountId)
+            )
+          );
+          
+          // Start with initial balance and add/subtract P&L from previous trades
+          let balance = account.initialBalance;
+          const tradesBeforeEntry: Array<{ entryTime: Date; realizedPnL: number }> = [];
+          
+          allTradesSnapshot.docs.forEach((doc) => {
+            const prevTrade = doc.data();
+            const prevEntryTime = prevTrade.entryTime?.toDate?.() ?? new Date(prevTrade.entryTime);
+            // Only count trades that occurred before this trade's entry
+            if (prevEntryTime < entry) {
+              tradesBeforeEntry.push({
+                entryTime: prevEntryTime,
+                realizedPnL: prevTrade.realizedPnL ?? 0,
+              });
+            }
+          });
+          
+          // Sort by entry time to process in chronological order
+          tradesBeforeEntry.sort((a, b) => a.entryTime.getTime() - b.entryTime.getTime());
+          
+          // Add P&L from each trade in chronological order
+          tradesBeforeEntry.forEach((prevTrade) => {
+            balance += prevTrade.realizedPnL;
+          });
+          
+          accountBalanceAtEntry = Math.max(0, balance);
+          
+          // Recalculate risk metrics based on account balance at entry time
+          let riskPercent = 0;
+          let positionSizePercent = 0;
+          if (accountBalanceAtEntry > 0) {
+            riskPercent = (trade.initialRisk / accountBalanceAtEntry) * 100;
+            const exposure = trade.positionSize * trade.optionEntryPrice;
+            positionSizePercent = (exposure / accountBalanceAtEntry) * 100;
+          }
+          
+          // Update trade with recalculated values
+          trade.accountBalance = accountBalanceAtEntry;
+          trade.riskPercent = Number(riskPercent.toFixed(2));
+          trade.positionSizePercent = Number(positionSizePercent.toFixed(2));
+        }
+      } catch (balanceError) {
+        console.warn("Error calculating account balance at entry:", balanceError);
+      }
+    }
+
     // Derive streaks and trade number from the most recent trade
     let winStreak = trade.winStreak ?? 0;
     let lossStreak = trade.lossStreak ?? 0;
@@ -130,6 +192,10 @@ export const getTrades = async (
       constraints.push(where("isAdherent", "==", filters.isAdherent));
     }
 
+    if (filters?.fundAccountId) {
+      constraints.push(where("fundAccountId", "==", filters.fundAccountId));
+    }
+
     const q = query(collection(ensureDb(), "trades"), ...constraints);
     const querySnapshot = await getDocs(q);
 
@@ -186,8 +252,12 @@ export const calculateMetrics = (trades: Trade[]): TradeMetrics => {
   const overallPnL = trades.reduce((sum, trade) => sum + trade.realizedPnL, 0);
   const winningTrades = trades.filter((trade) => trade.realizedPnL > 0);
   const winRate = (winningTrades.length / totalTrades) * 100;
+  // Calculate average R:R only from winning trades
   const averageRR =
-    trades.reduce((sum, trade) => sum + trade.realizedRR, 0) / totalTrades;
+    winningTrades.length > 0
+      ? winningTrades.reduce((sum, trade) => sum + trade.realizedRR, 0) /
+        winningTrades.length
+      : 0;
 
   // Calculate expectancy
   const avgWin =
@@ -254,6 +324,71 @@ export const updateTrade = async (
 
     const entryHour = entry.getHours();
     const dayOfWeek = entry.getDay();
+
+    // Calculate account balance at the time of trade entry
+    let accountBalanceAtEntry = trade.accountBalance ?? 0;
+    if (trade.fundAccountId) {
+      try {
+        const { getFundAccountById } = await import("./fundAccounts");
+        const account = await getFundAccountById(trade.fundAccountId);
+        if (account) {
+          // Get all trades for this fund account
+          // Note: We fetch all and filter in memory to avoid index requirements
+          const allTradesSnapshot = await getDocs(
+            query(
+              collection(ensureDb(), "trades"),
+              where("userId", "==", trade.userId),
+              where("fundAccountId", "==", trade.fundAccountId)
+            )
+          );
+          
+          // Start with initial balance and add/subtract P&L from previous trades
+          let balance = account.initialBalance;
+          const tradesBeforeEntry: Array<{ entryTime: Date; realizedPnL: number }> = [];
+          
+          allTradesSnapshot.docs.forEach((doc) => {
+            // Exclude current trade being updated
+            if (doc.id === id) return;
+            
+            const prevTrade = doc.data();
+            const prevEntryTime = prevTrade.entryTime?.toDate?.() ?? new Date(prevTrade.entryTime);
+            // Only count trades that occurred before this trade's entry
+            if (prevEntryTime < entry) {
+              tradesBeforeEntry.push({
+                entryTime: prevEntryTime,
+                realizedPnL: prevTrade.realizedPnL ?? 0,
+              });
+            }
+          });
+          
+          // Sort by entry time to process in chronological order
+          tradesBeforeEntry.sort((a, b) => a.entryTime.getTime() - b.entryTime.getTime());
+          
+          // Add P&L from each trade in chronological order
+          tradesBeforeEntry.forEach((prevTrade) => {
+            balance += prevTrade.realizedPnL;
+          });
+          
+          accountBalanceAtEntry = Math.max(0, balance);
+          
+          // Recalculate risk metrics based on account balance at entry time
+          let riskPercent = 0;
+          let positionSizePercent = 0;
+          if (accountBalanceAtEntry > 0) {
+            riskPercent = (trade.initialRisk / accountBalanceAtEntry) * 100;
+            const exposure = trade.positionSize * trade.optionEntryPrice;
+            positionSizePercent = (exposure / accountBalanceAtEntry) * 100;
+          }
+          
+          // Update trade with recalculated values
+          trade.accountBalance = accountBalanceAtEntry;
+          trade.riskPercent = Number(riskPercent.toFixed(2));
+          trade.positionSizePercent = Number(positionSizePercent.toFixed(2));
+        }
+      } catch (balanceError) {
+        console.warn("Error calculating account balance at entry:", balanceError);
+      }
+    }
 
     const tradeData = {
       ...trade,

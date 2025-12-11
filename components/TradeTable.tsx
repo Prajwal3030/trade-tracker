@@ -142,8 +142,8 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-x-auto w-full" style={{ maxWidth: '100%', overflowX: 'auto' }}>
-        <table className="divide-y divide-gray-700" style={{ width: 'max-content' }}>
+      <div className="hidden md:block overflow-x-auto w-full">
+        <table className="divide-y divide-gray-700 w-full">
           <thead className="bg-[#020617] sticky top-0 z-10">
             <tr>
               <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
@@ -180,7 +180,7 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
                 Adh
               </th>
               {(onEdit || onDelete) && (
-                <th className="px-2 py-2 text-left text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap">
+                <th className="px-2 py-2 text-right text-[10px] font-medium text-gray-300 uppercase tracking-wider whitespace-nowrap w-[120px]">
                   Actions
                 </th>
               )}
@@ -248,8 +248,8 @@ export default function TradeTable({ trades, onEdit, onDelete }: TradeTableProps
                   </span>
                 </td>
                 {(onEdit || onDelete) && (
-                  <td className="px-2 py-2 whitespace-nowrap text-xs">
-                    <div className="flex items-center gap-1">
+                  <td className="px-2 py-2 whitespace-nowrap text-xs text-right">
+                    <div className="flex items-center justify-end gap-1">
                       {onEdit && (
                         <button
                           type="button"

@@ -11,8 +11,9 @@ import { auth } from "@/lib/firebase";
 const links = [
   { href: "/log", label: "Log New Trade", key: "log" },
   { href: "/journal", label: "Trade Journal", key: "journal" },
-  { href: "/analytics", label: "Analytics & Insights", key: "analytics" },
   { href: "/strategies", label: "Setup / Strategy", key: "strategies" },
+  { href: "/fund-accounts", label: "Fund Accounts", key: "fundAccounts" },
+  { href: "/analytics", label: "Analytics & Insights", key: "analytics" },
 ];
 
 function NavIcon({ routeKey, active }: { routeKey: string; active: boolean }) {
@@ -99,6 +100,26 @@ function NavIcon({ routeKey, active }: { routeKey: string; active: boolean }) {
           <path d="M12 2L2 7l10 5 10-5-10-5z" />
           <path d="M2 17l10 5 10-5" />
           <path d="M2 12l10 5 10-5" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (routeKey === "fundAccounts") {
+    // Fund Accounts icon
+    return (
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/10">
+        <svg
+          viewBox="0 0 24 24"
+          className="h-4 w-4"
+          aria-hidden="true"
+          fill="none"
+          stroke={active ? "#10b981" : "#34d399"}
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
         </svg>
       </span>
     );
@@ -227,7 +248,7 @@ export default function Sidebar() {
   const SidebarContent = ({ onLinkClick }: { onLinkClick?: () => void }) => (
     <div className="flex flex-col h-full">
         {/* Navigation Links */}
-        <nav className="flex-1 p-4 pt-6">
+        <nav className="flex-1 p-4 pt-10">
           <ul className="space-y-2">
             {links.map((link, index) => {
               const active = pathname === link.href;
@@ -254,72 +275,6 @@ export default function Sidebar() {
             })}
           </ul>
         </nav>
-
-        {/* User Section */}
-        {user && (
-          <div className="p-4 border-t border-gray-700/80 relative user-menu-container">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#0b1120] transition-all duration-200 group"
-            >
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-900 font-bold text-lg shadow-lg">
-                {getUserInitial()}
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm font-medium text-slate-200 truncate">
-                  {getUserName()}
-                </div>
-                <div className="text-xs text-slate-400 truncate">
-                  {user.email}
-                </div>
-              </div>
-              <svg
-                className={`w-5 h-5 text-slate-400 transition-transform ${showUserMenu ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-
-            {/* Dropdown Menu */}
-            {showUserMenu && (
-              <div className="absolute bottom-full left-4 right-4 mb-2 bg-[#0b1120] border border-gray-700/80 rounded-xl shadow-2xl overflow-hidden z-50">
-                <div className="p-3 border-b border-gray-700/80">
-                  <div className="text-xs text-slate-400 mb-1">Signed in as</div>
-                  <div className="text-sm font-medium text-slate-200 truncate">
-                    {user.email}
-                  </div>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-red-400 hover:bg-red-500/10 transition-colors"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                    />
-                  </svg>
-                  <span>Sign Out</span>
-                </button>
-              </div>
-            )}
-          </div>
-        )}
     </div>
   );
 
@@ -332,8 +287,12 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile Top Bar */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-[#1f2937] via-[#111827] to-[#1f2937] border-b border-gray-700/80 backdrop-blur-md shadow-lg safe-area-top">
-        <div className="flex items-center justify-between px-4 py-3">
+      <header className="md:hidden fixed top-0 left-0 right-0 z-50 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] border-b border-amber-500/20 backdrop-blur-xl shadow-2xl safe-area-top h-16">
+        {/* Animated background gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5 opacity-50"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.1),transparent_50%)]"></div>
+        
+        <div className="relative flex items-center justify-between px-4 py-2 h-full">
           {/* Logo and Page Title */}
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <button
@@ -342,7 +301,7 @@ export default function Sidebar() {
               aria-label="Toggle menu"
             >
               <div className="relative w-10 h-10 flex items-center justify-center">
-                <div className={`absolute inset-0 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 transition-all duration-300 ${
+                <div className={`absolute inset-0 rounded-xl bg-gradient-to-br from-amber-400/30 to-amber-600/30 blur-md transition-all duration-300 ${
                   isMobileMenuOpen ? "opacity-100 scale-100" : "opacity-0 scale-90 group-hover:opacity-100 group-hover:scale-100"
                 }`}></div>
                 <div className="relative w-6 h-5 flex flex-col justify-between">
@@ -360,26 +319,228 @@ export default function Sidebar() {
             </button>
             
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <div className="relative flex-shrink-0">
-                <Image
-                  src="/logo.png"
-                  alt="Tracer Logo"
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 object-contain"
-                />
+              <div className="relative flex-shrink-0 group">
+                <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="relative">
+                  <Image
+                    src="/logo.png"
+                    alt="Tracer Logo"
+                    width={36}
+                    height={36}
+                    className="w-9 h-9 object-contain drop-shadow-lg"
+                  />
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <h1 className="text-sm font-bold bg-gradient-to-r from-slate-100 via-amber-200 to-amber-300 bg-clip-text text-transparent leading-none truncate">
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <h1 className="text-sm font-extrabold bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent leading-none truncate drop-shadow">
                   {getCurrentPageLabel()}
                 </h1>
+                <div className="h-1 w-1 rounded-full bg-amber-400 animate-pulse flex-shrink-0"></div>
               </div>
             </div>
           </div>
+
+          {/* User Profile - Mobile */}
+          {user && (
+            <div className="relative user-menu-container ml-2">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all duration-200 group backdrop-blur-sm"
+              >
+                <div className="relative">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400/30 to-amber-600/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-900 font-bold text-sm shadow-lg ring-1 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all">
+                    {getUserInitial()}
+                  </div>
+                </div>
+                <svg
+                  className={`w-4 h-4 text-slate-400 group-hover:text-amber-400 transition-all duration-200 ${showUserMenu ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu - Mobile */}
+              {showUserMenu && (
+                <div className="absolute top-full right-0 mt-2 w-64 bg-gradient-to-br from-[#0b1120] to-[#1e293b] border border-amber-500/20 rounded-xl shadow-2xl overflow-hidden z-50 backdrop-blur-xl">
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent pointer-events-none"></div>
+                  <div className="relative p-3 border-b border-amber-500/20">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-900 font-bold text-lg shadow-lg ring-2 ring-amber-500/30">
+                        {getUserInitial()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-slate-200 truncate">
+                          {getUserName()}
+                        </div>
+                        <div className="text-xs text-slate-400 truncate">
+                          {user.email}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-amber-400/80 font-medium">Signed in as</div>
+                    <div className="text-sm font-medium text-slate-300 truncate mt-1">
+                      {user.email}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="relative w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200 group"
+                  >
+                    <svg
+                      className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    <span className="font-medium">Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         
-        {/* Active Indicator */}
-        <div className="h-0.5 bg-gradient-to-r from-transparent via-amber-400/50 to-transparent"></div>
+        {/* Enhanced Active Indicator */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-amber-500/40 via-amber-400/80 to-amber-500/40"></div>
+      </header>
+
+      {/* Desktop Top Bar */}
+      <header className="hidden md:flex fixed top-0 left-0 right-0 z-40 bg-gradient-to-br from-[#0f172a] via-[#1e293b] to-[#0f172a] border-b border-amber-500/20 backdrop-blur-xl shadow-2xl">
+        {/* Animated background gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5 opacity-50"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(251,191,36,0.1),transparent_50%)]"></div>
+        
+        <div className="relative flex items-center justify-between px-6 py-2.5 w-full h-16">
+          {/* Logo and Page Title */}
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="relative flex-shrink-0 group">
+              {/* Glowing effect around logo */}
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-amber-400/30 to-amber-600/30 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <Image
+                  src="/logo.png"
+                  alt="Tracer Logo"
+                  width={36}
+                  height={36}
+                  className="w-9 h-9 object-contain drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-extrabold bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent leading-none drop-shadow-lg">
+                Tracer
+              </h1>
+              {/* Decorative accent */}
+              <div className="h-1 w-1 rounded-full bg-amber-400 animate-pulse"></div>
+            </div>
+          </div>
+
+          {/* User Profile */}
+          {user && (
+            <div className="relative user-menu-container">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-3 px-3 py-1.5 rounded-xl hover:bg-amber-500/10 border border-transparent hover:border-amber-500/30 transition-all duration-200 group backdrop-blur-sm"
+              >
+                <div className="relative flex-shrink-0">
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-amber-400/40 to-amber-600/40 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="relative w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-900 font-bold text-base shadow-lg ring-2 ring-amber-500/20 group-hover:ring-amber-500/40 transition-all">
+                    {getUserInitial()}
+                  </div>
+                </div>
+                <div className="hidden lg:block flex-1 min-w-0 text-left">
+                  <div className="text-sm font-semibold text-slate-100 truncate group-hover:text-amber-200 transition-colors">
+                    {getUserName()}
+                  </div>
+                  <div className="text-xs text-slate-400 truncate group-hover:text-slate-300 transition-colors">
+                    {user.email}
+                  </div>
+                </div>
+                <svg
+                  className={`w-4 h-4 text-slate-400 group-hover:text-amber-400 transition-all duration-200 ${showUserMenu ? "rotate-180" : ""}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showUserMenu && (
+                <div className="absolute top-full right-0 mt-3 w-72 bg-gradient-to-br from-[#0b1120] to-[#1e293b] border border-amber-500/20 rounded-xl shadow-2xl overflow-hidden z-50 backdrop-blur-xl">
+                  {/* Glow effect on dropdown */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-transparent pointer-events-none"></div>
+                  <div className="relative p-4 border-b border-amber-500/20">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-900 font-bold text-xl shadow-lg ring-2 ring-amber-500/30">
+                        {getUserInitial()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold text-slate-100 truncate">
+                          {getUserName()}
+                        </div>
+                        <div className="text-xs text-slate-400 truncate mt-0.5">
+                          {user.email}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-xs text-amber-400/80 font-medium">Signed in as</div>
+                    <div className="text-sm font-medium text-slate-300 truncate mt-1">
+                      {user.email}
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="relative w-full flex items-center gap-3 px-4 py-3 text-left text-sm text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200 group"
+                  >
+                    <svg
+                      className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    <span className="font-medium">Sign Out</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {/* Enhanced Active Indicator */}
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent"></div>
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-amber-500/40 via-amber-400/80 to-amber-500/40"></div>
       </header>
 
       {/* Mobile Menu Overlay */}
@@ -391,7 +552,7 @@ export default function Sidebar() {
       )}
 
       {/* Desktop Sidebar */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-[#1f2937] border-r border-gray-700/80 z-30 hidden md:flex flex-col shadow-2xl">
+      <aside className="fixed left-0 top-16 bottom-0 w-64 bg-[#1f2937] border-r border-gray-700/80 z-30 hidden md:flex flex-col shadow-2xl">
         <SidebarContent />
       </aside>
 
